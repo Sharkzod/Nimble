@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Heart, Star } from 'lucide-react';
+import { Heart, Link, Star } from 'lucide-react';
 import Header from '../components/TopBar';
 import Footer from '../components/Footer';
 
@@ -141,7 +141,7 @@ const MostPurchasedSection: React.FC = () => {
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Requests</h2>
       </div>
-      <button className='bg-[#FE7A36] text-white px-4 py-2 rounded-[100px] mb-4'>Create request</button>
+      <a href='/requests/create-request' className='bg-[#FE7A36] text-white px-4 py-2 rounded-[100px] mb-4'>Create request</a>
       </div>
 
       {/* Products Grid */}
