@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://nimble-backend-jl6y.onrender.com',
+  baseURL: 'https://nimble-backend-jl6y.onrender.com/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
