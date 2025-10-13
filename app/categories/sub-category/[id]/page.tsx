@@ -10,24 +10,7 @@ import { useFetchSubCategoryProducts } from '@/app/lib/hooks/useProductApis/useF
 import { useWishlist } from '@/app/lib/hooks/useProductApis/useWishlist'
 import Link from 'next/link'
 
-interface BackendProduct {
-  _id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  images: string[];
-  vendor: {
-    _id: string;
-    businessName: string;
-    location?: string;
-  };
-  rating?: number;
-  reviewCount?: number;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
+// Remove the BackendProduct interface and use Product directly
 interface TransformedProduct {
   id: string;
   name: string;
@@ -45,7 +28,6 @@ const SubCategory = () => {
   const params = useParams();
   const subCategoryId = params.id as string;
 
-  // Use the hook to fetch subcategory products
   const { 
     products: backendProducts, 
     loading, 
@@ -56,19 +38,24 @@ const SubCategory = () => {
 
   const { toggleWishlist, loading: wishlistLoading } = useWishlist();
 
-  // Transform backend products to frontend format
-  const transformProduct = (product: BackendProduct): TransformedProduct => ({
-    id: product._id,
-    name: product.name,
-    price: product.price,
-    originalPrice: product.originalPrice,
-    rating: product.rating || 4,
-    maxRating: 5,
-    image: product.images?.[0] || '/placeholder-product.png',
-    location: product.vendor?.location || 'Location not specified',
-    isWishlisted: false,
-    vendor: product.vendor?.businessName || 'Unknown Vendor'
-  });
+  // Update transform function to use the actual Product type
+  const transformProduct = (product: any): TransformedProduct => {
+    // Handle vendor object format
+    const vendorInfo = typeof product.vendor === 'object' ? product.vendor : {};
+    
+    return {
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      rating: product.rating || 4,
+      maxRating: 5,
+      image: product.images?.[0] || '/placeholder-product.png',
+      location: vendorInfo?.location || 'Location not specified',
+      isWishlisted: false,
+      vendor: vendorInfo?.businessName || vendorInfo?.name || 'Unknown Vendor'
+    };
+  };
 
   const [transformedProducts, setTransformedProducts] = useState<TransformedProduct[]>([]);
 
@@ -77,6 +64,8 @@ const SubCategory = () => {
     if (backendProducts && backendProducts.length > 0) {
       const transformed = backendProducts.map(transformProduct);
       setTransformedProducts(transformed);
+    } else {
+      setTransformedProducts([]);
     }
   }, [backendProducts]);
 
