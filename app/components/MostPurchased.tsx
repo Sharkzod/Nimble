@@ -6,22 +6,18 @@ import { useFetchProducts } from '../lib/hooks/useProductApis/useFetchProducts';
 import { useWishlist } from '../lib/hooks/useProductApis/useWishlist';
 import { useAuthStore } from '../lib/stores/useAuthStore';
 
-interface BackendProduct {
-  _id: string;
+// Remove the BackendProduct interface and create a simpler type that matches what you actually use
+interface TransformedProduct {
+  id: string;
   name: string;
   price: number;
   originalPrice?: number;
-  images: string[];
-  vendor: {
-    _id: string;
-    businessName: string;
-    location?: string;
-  };
-  rating?: number;
-  reviewCount?: number;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+  rating: number;
+  maxRating: number;
+  image: string;
+  location: string;
+  isWishlisted: boolean;
+  vendor: string;
 }
 
 const MostPurchasedSection: React.FC = () => {
@@ -40,27 +36,34 @@ const MostPurchasedSection: React.FC = () => {
   
   const { toggleWishlist, loading: wishlistLoading } = useWishlist();
 
-  // Transform backend data to frontend format
-  const transformProduct = (product: BackendProduct) => ({
-    id: product._id,
-    name: product.name,
-    price: product.price,
-    originalPrice: product.originalPrice,
-    rating: product.rating || 4, // Default rating if not provided
-    maxRating: 5,
-    image: product.images?.[0] || '/placeholder-image.jpg',
-    location: product.vendor?.location || 'Location not specified',
-    isWishlisted: false, // You might want to fetch this separately
-    vendor: product.vendor?.businessName || 'Unknown Vendor'
-  });
+  // Transform backend data to frontend format - use 'any' or a more flexible type
+  const transformProduct = (product: any): TransformedProduct => {
+    // Handle different vendor object formats safely
+    const vendorInfo = typeof product.vendor === 'object' ? product.vendor : {};
+    
+    return {
+      id: product._id || product.id,
+      name: product.name || 'Unnamed Product',
+      price: product.price || 0,
+      originalPrice: product.originalPrice,
+      rating: product.rating || 4, // Default rating if not provided
+      maxRating: 5,
+      image: product.images?.[0] || product.image || '/placeholder-image.jpg',
+      location: vendorInfo?.location || 'Location not specified',
+      isWishlisted: false, // You might want to fetch this separately
+      vendor: vendorInfo?.businessName || vendorInfo?.name || 'Unknown Vendor'
+    };
+  };
 
-  const [transformedProducts, setTransformedProducts] = useState([]);
+  const [transformedProducts, setTransformedProducts] = useState<TransformedProduct[]>([]);
 
   // Transform products when backend data changes
   useEffect(() => {
     if (backendProducts && backendProducts.length > 0) {
       const transformed = backendProducts.map(transformProduct);
       setTransformedProducts(transformed);
+    } else {
+      setTransformedProducts([]);
     }
   }, [backendProducts]);
 
@@ -235,7 +238,7 @@ const MostPurchasedSection: React.FC = () => {
           </div>
 
           {/* Load More Button */}
-          {pagination.hasNext && (
+          {pagination?.hasNext && (
             <div className="flex justify-center mt-8">
               <button
                 onClick={loadMore}
