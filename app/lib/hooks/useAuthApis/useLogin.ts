@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { authApi } from '../../api/authApi';
 import { useAuthStore } from '../../stores/useAuthStore';
-import type { AuthResponse } from '../../api/authApi'; // Import the API's type
+import type { AuthResponse } from '../../api/authApi';
 
 // Define interfaces
 interface LoginCredentials {
@@ -20,8 +20,6 @@ interface User {
   role?: 'user' | 'vendor' | 'admin';
   isVerified?: boolean;
 }
-
-// Remove the local AuthResponse interface definition
 
 interface UseLoginReturn {
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<AuthResponse>;
@@ -48,8 +46,15 @@ export const useLogin = (): UseLoginReturn => {
         throw new Error('Invalid response from server: missing user or token');
       }
       
-      // Update global state with rememberMe preference
-      login(user, token, rememberMe);
+      // Update global state - check your useAuthStore to see the correct signature
+      // If login only accepts 2 arguments, remove the third one
+      login(user, token); // Remove rememberMe parameter
+      
+      // If you need to handle rememberMe, you might need to store it separately
+      // For example, you could store it in localStorage or another state
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
       
       return response.data;
     } catch (err: any) {
