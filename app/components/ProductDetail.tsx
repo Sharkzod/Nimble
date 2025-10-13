@@ -1,50 +1,106 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Share2, MapPin, Minus, Plus, AlertCircle } from 'lucide-react';
+import { useWishlist } from '../lib/hooks/useProductApis/useWishlist';
 
 interface ProductSpec {
   label: string;
   value: string;
 }
 
-const ProductDetailPage: React.FC = () => {
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('X');
-  const [selectedColor, setSelectedColor] = useState('red');
-  const [isFavorited, setIsFavorited] = useState(false);
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  description?: string;
+  images: string[];
+  vendor?: {
+    _id: string;
+    businessName: string;
+    location?: string;
+  };
+  category?: {
+    _id: string;
+    name: string;
+  };
+  rating?: number;
+  isWishlisted?: boolean;
+  specifications?: ProductSpec[];
+  bulkPrices?: Array<{
+    quantity: number;
+    price: number;
+  }>;
+  sizes?: string[];
+  colors?: Array<{
+    name: string;
+    hex: string;
+  }>;
+  condition?: string;
+  type?: string;
+  gender?: string;
+}
 
-  const product = {
+interface ProductDetailPageProps {
+  product?: Product | null;
+  loading?: boolean;
+}
+
+const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ 
+  product: propProduct, 
+  loading = false 
+}) => {
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const { toggleWishlist, loading: wishlistLoading } = useWishlist();
+
+  // Mock data as fallback - remove when API is fully integrated
+  const mockProduct: Product = {
+    _id: '1',
     name: 'Children toy',
     price: 40000,
-    bulkPrice: 39000,
-    bulkFrom: 2,
-    discountPrice: 35000,
-    discountFrom: 6,
-    location: 'Nsukka, Enugu',
-    rating: 4,
-    promoted: true,
-    favorites: 26,
+    originalPrice: 45000,
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque eget sollicitudin ipsum, ac euismod nisl. Aenean pharetra augue eu purus sodales, vel tincidunt massa iaculis.',
     images: [
       '/car.png',
       '/car.png',
       '/car.png',
       '/car.png'
     ],
-    sizes: ['S', 'M', 'L', 'X'],
+    vendor: {
+      _id: '1',
+      businessName: 'Toy Store',
+      location: 'Nsukka, Enugu'
+    },
+    rating: 4,
+    isWishlisted: false,
+    sizes: ['S', 'M', 'L', 'XL'],
     colors: [
       { name: 'red', hex: '#EF4444' },
       { name: 'black', hex: '#000000' },
       { name: 'blue', hex: '#3B82F6' }
-    ]
+    ],
+    bulkPrices: [
+      { quantity: 2, price: 39000 },
+      { quantity: 6, price: 35000 }
+    ],
+    condition: 'New',
+    type: 'Toy',
+    gender: 'Unisex'
   };
 
+  // Use prop product or mock data
+  const product = propProduct || mockProduct;
+
+  // Generate specifications from product data
   const specifications: ProductSpec[] = [
-    { label: 'Type', value: 'Top' },
-    { label: 'Gender', value: 'Women\'s' },
-    { label: 'Color', value: 'Read, black, green' },
-    { label: 'Size', value: 'M X XL' },
-    { label: 'Condition', value: 'New' }
+    { label: 'Type', value: product.type || 'N/A' },
+    { label: 'Gender', value: product.gender || 'Unisex' },
+    { label: 'Color', value: product.colors?.map(c => c.name).join(', ') || 'Various' },
+    { label: 'Size', value: product.sizes?.join(', ') || 'One Size' },
+    { label: 'Condition', value: product.condition || 'New' }
   ];
 
   const delivery = {
@@ -54,27 +110,98 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
-  const decrementQuantity = () => setQuantity(prev => Math.max(0, prev - 1));
+  const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
   const formatPrice = (price: number) => `₦${price.toLocaleString()}`;
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating: number = 0) => {
     return Array.from({ length: 5 }, (_, i) => (
       <span key={i} className={i < rating ? 'text-yellow-400' : 'text-gray-300'}>★</span>
     ));
   };
 
   const handleShare = () => {
-    console.log('Share product');
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: product.description,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Product link copied to clipboard!');
+    }
+  };
+
+  const handleWishlistToggle = async () => {
+    try {
+      const newStatus = await toggleWishlist(product._id, product.isWishlisted || false);
+      // Note: You'll need to update the parent component's state or refetch the product
+      console.log('Wishlist status updated:', newStatus);
+    } catch (error) {
+      console.error('Wishlist toggle failed:', error);
+    }
   };
 
   const handleMessageSeller = () => {
-    console.log('Message seller');
+    console.log('Message seller:', product.vendor?._id);
   };
 
   const handleBuyNow = () => {
-    console.log('Buy now');
+    console.log('Buy now:', {
+      productId: product._id,
+      quantity,
+      size: selectedSize,
+      color: selectedColor
+    });
   };
+
+  // Set default selections when product loads
+  useEffect(() => {
+    if (product.sizes && product.sizes.length > 0) {
+      setSelectedSize(product.sizes[0]);
+    }
+    if (product.colors && product.colors.length > 0) {
+      setSelectedColor(product.colors[0].name);
+    }
+  }, [product]);
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="w-[90%] max-w-7xl mx-auto px-4 py-8 bg-white mt-[10px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Image Skeleton */}
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
+              {[1, 2, 3, 4].map((index) => (
+                <div key={index} className="w-20 h-20 bg-gray-200 rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+            <div className="flex-1 bg-gray-200 rounded-lg h-96 animate-pulse"></div>
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-20 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+            <div className="flex gap-3">
+              <div className="flex-1 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+              <div className="flex-1 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-[90%] max-w-7xl mx-auto px-4 py-8 bg-white mt-[10px]">
@@ -107,11 +234,11 @@ const ProductDetailPage: React.FC = () => {
           </div>
 
           {/* Main Image */}
-          <div className=" rounded-lg overflow-hidden">
+          <div className="flex-1 rounded-lg overflow-hidden">
             <img
               src={product.images[selectedImage]}
               alt={product.name}
-              className="w-full h-[100%] object-contain"
+              className="w-full h-full max-h-96 object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDYwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiMzNzM3MzciLz48L3N2Zz4=';
@@ -127,32 +254,47 @@ const ProductDetailPage: React.FC = () => {
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
-                <span>{product.location}</span>
+                <span>{product.vendor?.location || 'Location not specified'}</span>
               </div>
-              {product.promoted && (
-                <span className="text-xs text-gray-500">Promoted</span>
-              )}
+              {/* You can add promoted status from API if available */}
+              {/* <span className="text-xs text-gray-500">Promoted</span> */}
             </div>
 
             <div className="flex items-center gap-2 mb-3">
               <div className="flex">{renderStars(product.rating)}</div>
+              {product.rating && (
+                <span className="text-sm text-gray-600">({product.rating})</span>
+              )}
             </div>
 
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
-            <div className="text-3xl font-bold text-gray-900">{formatPrice(product.price)}</div>
-
-            <div className="mt-3 space-y-1 text-sm">
-              <div className="flex items-center gap-4">
-                <span className="text-gray-600">Bulk price</span>
-                <span className="font-semibold text-gray-600">{formatPrice(product.bulkPrice)}</span>
+            
+            {/* Price Section */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="text-3xl font-bold text-gray-900">
+                {formatPrice(product.price)}
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-gray-600">₦39,000</span>
-                <span className="text-gray-500">From {product.bulkFrom} pieces</span>
-                <span className="text-gray-600">₦35,000</span>
-                <span className="text-gray-500">From {product.discountFrom} pieces</span>
-              </div>
+              {product.originalPrice && product.originalPrice > product.price && (
+                <div className="text-lg text-gray-500 line-through">
+                  {formatPrice(product.originalPrice)}
+                </div>
+              )}
             </div>
+
+            {/* Bulk Pricing */}
+            {product.bulkPrices && product.bulkPrices.length > 0 && (
+              <div className="mt-3 space-y-2 text-sm">
+                <div className="font-medium text-gray-700">Bulk Pricing:</div>
+                {product.bulkPrices.map((bulkPrice, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <span className="text-gray-600">From {bulkPrice.quantity} pieces:</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatPrice(bulkPrice.price)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quantity and Size */}
@@ -163,6 +305,7 @@ const ProductDetailPage: React.FC = () => {
                 <button
                   onClick={decrementQuantity}
                   className="p-2 hover:bg-gray-100 transition-colors"
+                  disabled={quantity <= 1}
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -176,44 +319,49 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Size:</label>
-              <div className="flex gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`w-10 h-10 rounded-full border-2 font-medium transition-colors ${
-                      selectedSize === size
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {product.sizes && product.sizes.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Size:</label>
+                <div className="flex gap-2">
+                  {product.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`w-10 h-10 rounded-full border-2 font-medium transition-colors ${
+                        selectedSize === size
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Colors */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Colors:</label>
-            <div className="flex gap-3">
-              {product.colors.map((color) => (
-                <button
-                  key={color.name}
-                  onClick={() => setSelectedColor(color.name)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    selectedColor === color.name
-                      ? 'border-blue-600 ring-2 ring-blue-200'
-                      : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: color.hex }}
-                />
-              ))}
+          {product.colors && product.colors.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Colors:</label>
+              <div className="flex gap-3">
+                {product.colors.map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() => setSelectedColor(color.name)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      selectedColor === color.name
+                        ? 'border-blue-600 ring-2 ring-blue-200'
+                        : 'border-gray-300'
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3">
@@ -234,13 +382,14 @@ const ProductDetailPage: React.FC = () => {
           {/* Favorite and Share */}
           <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
             <button
-              onClick={() => setIsFavorited(!isFavorited)}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors"
+              onClick={handleWishlistToggle}
+              disabled={wishlistLoading}
+              className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors disabled:opacity-50"
             >
               <Heart
-                className={`w-5 h-5 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`}
+                className={`w-5 h-5 ${product.isWishlisted ? 'fill-red-500 text-red-500' : ''}`}
               />
-              <span className="text-sm font-medium">{product.favorites}</span>
+              <span className="text-sm font-medium">Save</span>
             </button>
             <button
               onClick={handleShare}
@@ -300,12 +449,14 @@ const ProductDetailPage: React.FC = () => {
       </div>
 
       {/* Description */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
-        <p className="text-gray-700 leading-relaxed">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque eget sollicitudin ipsum, ac euismod nisl. Aenean pharetra augue eu purus sodales, vel tincidunt massa iaculis. Nam sit amet lorem a tortor tincidunt lacinia. Nam euismod
-        </p>
-      </div>
+      {product.description && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+            {product.description}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

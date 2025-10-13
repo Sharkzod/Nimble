@@ -1,114 +1,85 @@
-import React, { useState } from 'react';
-import { Heart, Star } from 'lucide-react';
-import Link from 'next/link'; // Import Next.js Link component
-import { useRouter } from 'next/navigation'; // Import useRouter for programmatic navigation
+import React, { useState, useEffect } from 'react';
+import { Heart, Star, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useFetchProducts } from '../lib/hooks/useProductApis/useFetchProducts';
+import { useWishlist } from '../lib/hooks/useProductApis/useWishlist';
+import { useAuthStore } from '../lib/stores/useAuthStore';
 
-interface Product {
-  id: string;
+interface BackendProduct {
+  _id: string;
   name: string;
   price: number;
   originalPrice?: number;
-  rating: number;
-  maxRating: number;
-  image: string;
-  location: string;
-  isWishlisted: boolean;
+  images: string[];
+  vendor: {
+    _id: string;
+    businessName: string;
+    location?: string;
+  };
+  rating?: number;
+  reviewCount?: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const MostPurchasedSection: React.FC = () => {
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  
+  // Use our custom hooks
+  const { 
+    products: backendProducts, 
+    loading, 
+    error, 
+    pagination, 
+    refetch,
+    loadMore 
+  } = useFetchProducts();
+  
+  const { toggleWishlist, loading: wishlistLoading } = useWishlist();
 
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/camera.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '2',
-      name: 'Ordinary skincare set',
-      price: 40000,
-      rating: 5,
-      maxRating: 5,
-      image: '/body.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '3',
-      name: 'Ultra hydrating moisturizer',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/cream.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '4',
-      name: 'HP laptop',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/laptop2.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '5',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/car.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '6',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 5,
-      maxRating: 5,
-      image: '/camera.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '7',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/body.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '8',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/camera.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
+  // Transform backend data to frontend format
+  const transformProduct = (product: BackendProduct) => ({
+    id: product._id,
+    name: product.name,
+    price: product.price,
+    originalPrice: product.originalPrice,
+    rating: product.rating || 4, // Default rating if not provided
+    maxRating: 5,
+    image: product.images?.[0] || '/placeholder-image.jpg',
+    location: product.vendor?.location || 'Location not specified',
+    isWishlisted: false, // You might want to fetch this separately
+    vendor: product.vendor?.businessName || 'Unknown Vendor'
+  });
+
+  const [transformedProducts, setTransformedProducts] = useState([]);
+
+  // Transform products when backend data changes
+  useEffect(() => {
+    if (backendProducts && backendProducts.length > 0) {
+      const transformed = backendProducts.map(transformProduct);
+      setTransformedProducts(transformed);
     }
-  ]);
+  }, [backendProducts]);
 
-  const toggleWishlist = (productId: string) => {
-    setProducts(prev => 
-      prev.map(product => 
-        product.id === productId 
-          ? { ...product, isWishlisted: !product.isWishlisted }
-          : product
-      )
-    );
+  const handleWishlistToggle = async (productId: string, currentStatus: boolean) => {
+    try {
+      const newStatus = await toggleWishlist(productId, currentStatus);
+      
+      // Update local state optimistically
+      setTransformedProducts(prev => 
+        prev.map(product => 
+          product.id === productId 
+            ? { ...product, isWishlisted: newStatus }
+            : product
+        )
+      );
+    } catch (error) {
+      console.error('Wishlist toggle failed:', error);
+      // You might want to show a toast notification here
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -128,152 +99,175 @@ const MostPurchasedSection: React.FC = () => {
     ));
   };
 
-  // Handler for product clicks
-  const handleProductClick = (productId: string) => {
-    router.push(`/product/${productId}`);
+  const handleRetry = () => {
+    refetch();
   };
+
+  // Loading skeleton
+  const renderSkeleton = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse">
+          <div className="aspect-square bg-gray-200"></div>
+          <div className="p-4 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Error state
+  if (error && transformedProducts.length === 0) {
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Most purchased</h2>
+        </div>
+        <div className="text-center py-12">
+          <div className="text-red-500 mb-4">Failed to load products</div>
+          <button
+            onClick={handleRetry}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
       {/* Section Header */}
-      <div className="mb-6">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Most purchased</h2>
+        {loading && (
+          <RefreshCw className="w-5 h-5 text-gray-500 animate-spin" />
+        )}
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {products.map((product) => (
-          // Option 1: Using Next.js Link (Recommended for better performance)
-          <Link
-            key={product.id}
-            href={`/product/${product.id}`}
-            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group block"
-          >
-            {/* Product Image */}
-            <div className="relative aspect-square bg-gray-100">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTEyLjVIMTc1VjE4Ny41SDEyNVYxMTIuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
-                }}
-              />
-              
-              {/* Wishlist Button */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleWishlist(product.id);
-                }}
-                className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200"
+      {loading && transformedProducts.length === 0 ? (
+        renderSkeleton()
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {transformedProducts.map((product) => (
+              <Link
+                key={product.id}
+                href={`/product/${product.id}`}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group block"
               >
-                <Heart
-                  className={`w-4 h-4 ${
-                    product.isWishlisted
-                      ? 'fill-red-500 text-red-500'
-                      : 'text-gray-600 hover:text-red-500'
-                  }`}
-                />
-              </button>
-            </div>
+                {/* Product Image */}
+                <div className="relative aspect-square bg-gray-100">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTEyLjVIMTc1VjE4Ny41SDEyNVYxMTIuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                    }}
+                  />
+                  
+                  {/* Wishlist Button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleWishlistToggle(product.id, product.isWishlisted);
+                    }}
+                    disabled={wishlistLoading}
+                    className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        product.isWishlisted
+                          ? 'fill-red-500 text-red-500'
+                          : 'text-gray-600 hover:text-red-500'
+                      }`}
+                    />
+                  </button>
+                </div>
 
-            {/* Product Info */}
-            <div className="p-4">
-              {/* Rating */}
-              <div className="flex items-center gap-1 mb-2">
-                {renderStars(product.rating, product.maxRating)}
-              </div>
+                {/* Product Info */}
+                <div className="p-4">
+                  {/* Rating */}
+                  <div className="flex items-center gap-1 mb-2">
+                    {renderStars(product.rating, product.maxRating)}
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({product.rating})
+                    </span>
+                  </div>
 
-              {/* Product Name */}
-              <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                {product.name}
-              </h3>
+                  {/* Product Name */}
+                  <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                    {product.name}
+                  </h3>
 
-              {/* Price */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg font-bold text-gray-900">
-                  {formatPrice(product.price)}
-                </span>
-                {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {formatPrice(product.originalPrice)}
-                  </span>
-                )}
-              </div>
+                  {/* Vendor */}
+                  <p className="text-xs text-gray-600 mb-2">
+                    By {product.vendor}
+                  </p>
 
-              {/* Location */}
-              <p className="text-xs text-gray-500">
-                {product.location}
-              </p>
-            </div>
-          </Link>
+                  {/* Price */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatPrice(product.price)}
+                    </span>
+                    {product.originalPrice && product.originalPrice > product.price && (
+                      <span className="text-sm text-gray-500 line-through">
+                        {formatPrice(product.originalPrice)}
+                      </span>
+                    )}
+                  </div>
 
-          // Option 2: Using onClick handler (if you need more control)
-          /*
-          <div
-            key={product.id}
-            onClick={() => handleProductClick(product.id)}
-            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-          >
-            <div className="relative aspect-square bg-gray-100">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTEyLjVIMTc1VjE4Ny41SDEyNVYxMTIuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
-                }}
-              />
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleWishlist(product.id);
-                }}
-                className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200"
-              >
-                <Heart
-                  className={`w-4 h-4 ${
-                    product.isWishlisted
-                      ? 'fill-red-500 text-red-500'
-                      : 'text-gray-600 hover:text-red-500'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="p-4">
-              <div className="flex items-center gap-1 mb-2">
-                {renderStars(product.rating, product.maxRating)}
-              </div>
-
-              <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                {product.name}
-              </h3>
-
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg font-bold text-gray-900">
-                  {formatPrice(product.price)}
-                </span>
-                {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {formatPrice(product.originalPrice)}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-gray-500">
-                {product.location}
-              </p>
-            </div>
+                  {/* Location */}
+                  <p className="text-xs text-gray-500">
+                    {product.location}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
-          */
-        ))}
-      </div>
+
+          {/* Load More Button */}
+          {pagination.hasNext && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={loadMore}
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More'
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {transformedProducts.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 mb-4">No products found</div>
+              <button
+                onClick={refetch}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Refresh
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google";
 import { Space_Grotesk } from 'next/font/google'
 import "./globals.css";
+import LayoutWrapper from "./components/LayoutWrapper";
+import TokenDebugger from "./components/DebugAuth";
+import RedirectDebugger from "./components/DebugAuth";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'], // Customize as needed
-  variable: '--font-space-grotesk',     // Optional: CSS variable for Tailwind
   display: 'swap',
 });
 
@@ -26,7 +27,10 @@ export default function RootLayout({
         className={spaceGrotesk.className}
       >
         <div className='bg-white'>
+          <LayoutWrapper>
+          <RedirectDebugger/>
         {children}
+        </LayoutWrapper>
         </div>
       </body>
     </html>

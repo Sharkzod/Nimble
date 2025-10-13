@@ -206,7 +206,7 @@ const VerticalNavMenu: React.FC = () => {
   return (
     <>
       {/* Mobile Menu Button - Hidden when mobile menu is open */}
-      <div className={`md:hidden fixed top-4 left-4 z-50 transition-opacity duration-300 ${
+      <div className={`md:hidden hidden top-4 left-4 z-50 transition-opacity duration-300 ${
         isMobileMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}>
         <button
