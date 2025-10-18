@@ -106,9 +106,9 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
             
             <div className=" border-gray-200 my-2"></div>
             
-            <button className="w-full text-left px-4 py-4 text-base font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-b border-gray-200 transition-colors duration-200">
-              Log out
-            </button>
+            <button onClick={() => handleLogout()} className="w-full text-left px-4 py-3 text-base font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                Log out
+              </button>
           </nav>
         </div>
       </div>
