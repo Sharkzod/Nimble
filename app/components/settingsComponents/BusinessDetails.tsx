@@ -59,7 +59,7 @@ export default function BusinessDetails({
   };
 
   return (
-    <div className="w-full mx-auto p-8 bg-gray-50">
+    <div className="w-full mx-auto p-8 bg-gray-50 text-black">
       <h1 className="text-3xl font-semibold text-gray-800 mb-8">Business details</h1>
 
       <div className="space-y-6 mb-8">

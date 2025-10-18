@@ -66,16 +66,17 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     });
   };
 
+  const { signOut } = useLogout(); // ✅ Call hook at component level
+
+
   const handleLogout = async () => {
-   
     try {
-      useLogout();
+      await signOut(); // ✅ Use the function returned by the hook
       
-      // Redirect on success - you can change this to your desired route
+      // Redirect on success
       router.push('/login'); 
       
     } catch (err) {
-      // Error is handled by the hook
       console.error('Logout failed:', err);
     }
   };

@@ -80,7 +80,7 @@ export default function ChangePassword({ onSubmit }: ChangePasswordProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-8 bg-gray-50">
+    <div className="w-full max-w-2xl mx-auto p-8 bg-gray-50 text-black">
       <h1 className="text-2xl font-semibold text-gray-800 mb-8">Change password</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">

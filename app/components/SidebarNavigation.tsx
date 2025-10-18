@@ -44,7 +44,7 @@ const VerticalNavMenu: React.FC = () => {
     { id: 'reviews', label: 'Reviews', path: '/reviews' },
     { id: 'saved-items', label: 'Saved items', path: '/saved-items' },
     { id: 'transactions', label: 'Transactions', path: '/transactions' },
-    { id: 'settings', label: 'Settings', path: '/settings' }
+    { id: 'settings', label: 'Settings', path: '/dashboard/settings' }
   ];
 
   // Calculate dynamic sidebar height based on actual content
