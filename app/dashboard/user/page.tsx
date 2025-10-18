@@ -42,7 +42,7 @@ const User = () => {
   }
 
   return (
-    <div className='w-full min-h-screen bg-white'>
+    <div className='w-full min-h-screen bg-white '>
       {/* Header - Visible only on desktop/tablet */}
       <div className="hidden md:block">
         <Header/>
@@ -53,7 +53,7 @@ const User = () => {
       </div>
       
       {/* Main Content with bottom padding for mobile nav */}
-      <main className="pb-20 md:pb-0">
+      <main className="pb-20 md:pb-0 ">
         <div className='flex w-full sm:w-[90%] m-auto justify-between'>
           <VerticalNavMenu/>
           <WalletDashboardComponent/>

@@ -52,7 +52,7 @@ const Header: React.FC = () => {
   };
 
   const toggleUserMenu = (): void => {
-    setShowUserMenu(!showUserMenu);
+    router.push('/dashboard/settings')
   };
 
   const toggleMobileMenu = (): void => {

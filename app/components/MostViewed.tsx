@@ -1,104 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Star } from 'lucide-react';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  maxRating: number;
-  image: string;
-  location: string;
-  isWishlisted: boolean;
-}
-
+import { useFetchMostViewed } from '../lib/hooks/useProductApis/useFetchMostViewed';
+import { Product } from '../lib/api/productsApi';
 const MostViewedSection: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/camera.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '2',
-      name: 'Ordinary skincare set',
-      price: 40000,
-      rating: 5,
-      maxRating: 5,
-      image: '/body.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '3',
-      name: 'Ultra hydrating moisturizer',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/cream.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '4',
-      name: 'HP laptop',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/laptop2.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '5',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/car.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '6',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 5,
-      maxRating: 5,
-      image: '/camera.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '7',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/body.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
-    },
-    {
-      id: '8',
-      name: 'Photopulse camera',
-      price: 40000,
-      rating: 4,
-      maxRating: 5,
-      image: '/camera.png',
-      location: 'Awojek, Enugu',
-      isWishlisted: false
+  const { data: mostViewedProducts, loading, error, refetch } = useFetchMostViewed();
+  const [localProducts, setLocalProducts] = useState<Product[]>([]);
+
+  // Sync local state with fetched products
+  useEffect(() => {
+    console.log('Most viewed products from hook:', mostViewedProducts);
+    if (Array.isArray(mostViewedProducts)) {
+      setLocalProducts(mostViewedProducts);
+    } else {
+      console.warn('mostViewedProducts is not an array:', mostViewedProducts);
+      setLocalProducts([]);
     }
-  ]);
+  }, [mostViewedProducts]);
 
   const toggleWishlist = (productId: string) => {
-    setProducts(prev => 
+    setLocalProducts(prev => 
       prev.map(product => 
         product.id === productId 
           ? { ...product, isWishlisted: !product.isWishlisted }
@@ -108,15 +28,18 @@ const MostViewedSection: React.FC = () => {
   };
 
   const formatPrice = (price: number) => {
-    return `₦${price.toLocaleString()}`;
+    return `₦${price?.toLocaleString() || '0'}`;
   };
 
   const renderStars = (rating: number, maxRating: number) => {
-    return Array.from({ length: maxRating }, (_, index) => (
+    const safeRating = rating || 0;
+    const safeMaxRating = maxRating || 5;
+    
+    return Array.from({ length: safeMaxRating }, (_, index) => (
       <Star
         key={index}
         className={`w-3 h-3 ${
-          index < rating
+          index < safeRating
             ? 'fill-yellow-400 text-yellow-400'
             : 'text-gray-300'
         }`}
@@ -126,7 +49,53 @@ const MostViewedSection: React.FC = () => {
 
   const handleProductClick = (productId: string) => {
     console.log('Product clicked:', productId);
+    // You can navigate to product detail page here
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Most viewed</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse">
+              <div className="aspect-square bg-gray-200"></div>
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Most viewed</h2>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">Error loading products: {error}</p>
+          <button
+            onClick={refetch}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Rendering products:', localProducts);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
@@ -137,89 +106,96 @@ const MostViewedSection: React.FC = () => {
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-            onClick={() => handleProductClick(product.id)}
-          >
-            {/* Product Image */}
-            <div className="relative aspect-square bg-gray-100">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                onError={(e) => {
-                  // Fallback to a placeholder if image doesn't load
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTEyLjVIMTc1VjE4Ny41SDEyNVYxMTIuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
-                }}
-              />
-              
-              {/* Wishlist Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleWishlist(product.id);
-                }}
-                className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200"
-              >
-                <Heart
-                  className={`w-4 h-4 ${
-                    product.isWishlisted
-                      ? 'fill-red-500 text-red-500'
-                      : 'text-gray-600 hover:text-red-500'
-                  }`}
+        {localProducts.length > 0 ? (
+          localProducts.map((product) => (
+            <div
+              key={product.id}
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
+              onClick={() => handleProductClick(product.id)}
+            >
+              {/* Product Image */}
+              <div className="relative aspect-square bg-gray-100">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTEyLjVIMTc1VjE4Ny41SDEyNVYxMTIuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                  }}
                 />
-              </button>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-4">
-              {/* Rating */}
-              <div className="flex items-center gap-1 mb-2">
-                {renderStars(product.rating, product.maxRating)}
+                
+                {/* Wishlist Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleWishlist(product.id);
+                  }}
+                  className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200"
+                >
+                  <Heart
+                    className={`w-4 h-4 ${
+                      product.isWishlisted
+                        ? 'fill-red-500 text-red-500'
+                        : 'text-gray-600 hover:text-red-500'
+                    }`}
+                  />
+                </button>
               </div>
 
-              {/* Product Name */}
-              <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                {product.name}
-              </h3>
-
-              {/* Price */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg font-bold text-gray-900">
-                  {formatPrice(product.price)}
-                </span>
-                {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {formatPrice(product.originalPrice)}
+              {/* Product Info */}
+              <div className="p-4">
+                {/* Rating */}
+                <div className="flex items-center gap-1 mb-2">
+                  {renderStars(product.rating, product.maxRating)}
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({product.rating || 0})
                   </span>
+                </div>
+
+                {/* Product Name */}
+                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                  {product.name || 'Unnamed Product'}
+                </h3>
+
+                {/* Price */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatPrice(product.price)}
+                  </span>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-sm text-gray-500 line-through">
+                      {formatPrice(product.originalPrice)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Location */}
+                <p className="text-xs text-gray-500">
+                  {product.location || 'Location not available'}
+                </p>
+
+                {/* Additional info for debugging */}
+                {product.views !== undefined && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Views: {product.views}
+                  </p>
                 )}
               </div>
-
-              {/* Location */}
-              <p className="text-xs text-gray-500">
-                {product.location}
-              </p>
             </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-8">
+            <p className="text-gray-500">No products found.</p>
+            <button
+              onClick={refetch}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+            >
+              Refresh
+            </button>
           </div>
-        ))}
+        )}
       </div>
-
-      {/* Demo Info */}
-      {/* <div className="mt-8 bg-blue-50 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-800 mb-2">Component Features:</h3>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• Responsive grid layout (1 col mobile, 2 col tablet, 4 col desktop)</li>
-          <li>• Interactive wishlist hearts with toggle functionality</li>
-          <li>• Star rating display system</li>
-          <li>• Hover effects on product cards and images</li>
-          <li>• Nigerian Naira price formatting</li>
-          <li>• Image fallback for missing images</li>
-          <li>• Click handlers for product navigation</li>
-        </ul>
-      </div> */}
     </div>
   );
 };

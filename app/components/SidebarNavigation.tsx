@@ -40,7 +40,7 @@ const VerticalNavMenu: React.FC = () => {
       ] 
     },
     { id: 'my-requests', label: 'My requests', path: '/dashboard/my-requests' },
-    { id: 'messages', label: 'Messages', path: '/messages' },
+    { id: 'messages', label: 'Messages', path: '/dashboard/messages' },
     { id: 'reviews', label: 'Reviews', path: '/reviews' },
     { id: 'saved-items', label: 'Saved items', path: '/saved-items' },
     { id: 'transactions', label: 'Transactions', path: '/transactions' },

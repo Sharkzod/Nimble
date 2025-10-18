@@ -8,6 +8,8 @@ import PaidTab from '@/app/components/myOrderComponents/PaidTab';
 import AppealTab from '@/app/components/myOrderComponents/Appealtab';
 import CompletedOrdersComponent from '@/app/components/myOrderComponents/NewCompleted';
 import FailedOrdersComponent from '@/app/components/myOrderComponents/NewFailed';
+import MobileTopBar from '@/app/components/MobileTopBar';
+import BottomNavigation from '@/app/components/BottomNav';
 
 type OrderTab = 'to-pay' | 'paid' | 'appeal' | 'completed' | 'failed';
 
@@ -41,8 +43,14 @@ const MyOrdersComponent: React.FC = () => {
 
   return (
     <div className="w-full flex flex-col min-h-screen">
-      <Header/>
-      <div className="w-full flex flex-col lg:flex-row flex-1 mx-auto p-3 sm:p-4 md:p-6 bg-gray-50">
+     <div className="hidden md:block">
+        <Header/>
+      </div>
+
+       <div className="block md:hidden fixed top-0 left-0 right-0 z-50">
+              <MobileTopBar/>
+            </div>
+      <div className="w-full flex flex-col lg:flex-row flex-1 mx-auto p-3 sm:p-4 md:p-6 bg-gray-50 mt-[80px] sm:mt-0">
         {/* Sidebar - hidden on mobile, shown on lg screens */}
         <div className=" lg:block lg:w-64 xl:w-72 flex-shrink-0">
           <VerticalNavMenu/>
@@ -81,6 +89,9 @@ const MyOrdersComponent: React.FC = () => {
             {renderTabContent()}
           </div>
         </div>
+      </div>
+      <div className="block md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <BottomNavigation/>
       </div>
       <Footer/>
     </div>
