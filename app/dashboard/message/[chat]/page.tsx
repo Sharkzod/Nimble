@@ -23,21 +23,21 @@ interface OrderChatProps {
   onDelete?: () => void;
 }
 
-export default function OrderChat({
-  order,
-  onBack,
-  onReportUser,
-  onFollowUser,
-  onViewProfile,
-  onAppeal,
-  onDelete
-}: OrderChatProps) {
+// Add proper typing for the page component
+interface PageProps {
+  params: {
+    chat: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function OrderChatPage({ params }: PageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Use default values if no order is provided
-  const defaultOrder: Order = {
-    id: 'default',
+  // Use default values for the order
+  const currentOrder: Order = {
+    id: params.chat || 'default',
     customerName: 'Agnes David',
     productName: 'Run your own for...',
     amount: 15000,
@@ -45,7 +45,31 @@ export default function OrderChat({
     status: 'active'
   };
 
-  const currentOrder = order || defaultOrder;
+  // Default handlers
+  const handleBack = () => {
+    console.log('Navigating back');
+    // You can use router.back() here if needed
+  };
+
+  const handleReportUser = () => {
+    console.log('Reporting user');
+  };
+
+  const handleFollowUser = () => {
+    console.log('Following user');
+  };
+
+  const handleViewProfile = () => {
+    console.log('Viewing profile');
+  };
+
+  const handleAppeal = () => {
+    console.log('Appealing');
+  };
+
+  const handleDelete = () => {
+    console.log('Deleting chat');
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -76,7 +100,7 @@ export default function OrderChat({
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <svg
@@ -141,7 +165,7 @@ export default function OrderChat({
               {/* Menu */}
               <div className="absolute right-0 top-12 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
                 <button
-                  onClick={() => handleMenuAction(onReportUser || (() => console.log('Report user')))}
+                  onClick={() => handleMenuAction(handleReportUser)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
                   <svg
@@ -161,7 +185,7 @@ export default function OrderChat({
                 </button>
 
                 <button
-                  onClick={() => handleMenuAction(onFollowUser || (() => console.log('Follow user')))}
+                  onClick={() => handleMenuAction(handleFollowUser)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
                   <svg
@@ -181,7 +205,7 @@ export default function OrderChat({
                 </button>
 
                 <button
-                  onClick={() => handleMenuAction(onViewProfile || (() => console.log('View profile')))}
+                  onClick={() => handleMenuAction(handleViewProfile)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
                   <svg
@@ -207,7 +231,7 @@ export default function OrderChat({
                 </button>
 
                 <button
-                  onClick={() => handleMenuAction(onAppeal || (() => console.log('Appeal')))}
+                  onClick={() => handleMenuAction(handleAppeal)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
                   <svg
@@ -235,7 +259,7 @@ export default function OrderChat({
                 <div className="border-t border-gray-200 my-2" />
 
                 <button
-                  onClick={() => handleMenuAction(onDelete || (() => console.log('Delete')))}
+                  onClick={() => handleMenuAction(handleDelete)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
                   <svg
