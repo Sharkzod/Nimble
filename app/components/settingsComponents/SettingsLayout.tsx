@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SettingsTab, MobileViewState } from '../../types/settings';
+import { useLogout } from '@/app/lib/hooks/useAuthApis/useLogout';
+import { useRouter } from 'next/navigation';
 
 interface SettingsLayoutProps {
   activeTab: SettingsTab;
@@ -17,6 +19,8 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     showTabList: true,
     showContent: false
   });
+
+  const router = useRouter()
 
   const tabs = [
     { id: 'personal' as SettingsTab, label: 'Personal profile' },
@@ -61,6 +65,21 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       showContent: false
     });
   };
+
+  const handleLogout = async () => {
+   
+    try {
+      useLogout();
+      
+      // Redirect on success - you can change this to your desired route
+      router.push('/login'); 
+      
+    } catch (err) {
+      // Error is handled by the hook
+      console.error('Logout failed:', err);
+    }
+  };
+
 
   // Mobile: Show only tab list (full width)
   if (mobileView.isMobile && mobileView.showTabList) {
@@ -146,7 +165,7 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
               
               <div className="border-t border-gray-200 my-4"></div>
               
-              <button className="w-full text-left px-4 py-3 text-base font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+              <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-base font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
                 Log out
               </button>
             </nav>

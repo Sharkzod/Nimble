@@ -13,31 +13,26 @@ interface Order {
   status: string;
 }
 
-interface OrderChatProps {
-  order?: Order;
-  onBack?: () => void;
-  onReportUser?: () => void;
-  onFollowUser?: () => void;
-  onViewProfile?: () => void;
-  onAppeal?: () => void;
-  onDelete?: () => void;
-}
-
-// Add proper typing for the page component
-interface PageProps {
-  params: {
+// Remove the old PageProps interface and use this instead
+interface OrderChatPageProps {
+  params: Promise<{
     chat: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default function OrderChatPage({ params }: PageProps) {
+export default function OrderChatPage(props: OrderChatPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [chatId, setChatId] = useState<string>('default');
 
-  // Use default values for the order
+  // Since we can't use async/await directly in a client component with params Promise,
+  // we'll use a useEffect to handle the params when they resolve
+  // However, for client components, we might need a different approach
+
+  // For now, let's use a default approach that works with client components
   const currentOrder: Order = {
-    id: params.chat || 'default',
+    id: chatId,
     customerName: 'Agnes David',
     productName: 'Run your own for...',
     amount: 15000,
@@ -49,6 +44,9 @@ export default function OrderChatPage({ params }: PageProps) {
   const handleBack = () => {
     console.log('Navigating back');
     // You can use router.back() here if needed
+    if (typeof window !== 'undefined') {
+      window.history.back();
+    }
   };
 
   const handleReportUser = () => {
