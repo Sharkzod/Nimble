@@ -68,7 +68,7 @@ export const authApi = {
   logout: async (): Promise<ApiResponse> => {
     // Clear token first
     clearToken();
-    return apiClient.post('/api/auth/logout');
+    return apiClient.post('/auth/logout');
   },
 
   // Check if user is authenticated
