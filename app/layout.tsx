@@ -26,7 +26,7 @@ export default function RootLayout({
       <body
         className={spaceGrotesk.className}
       >
-        <div className='bg-white'>
+        <div className='bg-white h-[100%]'>
           <LayoutWrapper>
           <RedirectDebugger/>
         {children}

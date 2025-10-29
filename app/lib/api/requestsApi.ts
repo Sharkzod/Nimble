@@ -20,7 +20,101 @@ export interface Request {
   createdAt?: string;
 }
 
+export interface CreateRequestData {
+  category: string;
+  productImages: File[];
+  videoLink?: string;
+  title: string;
+  location: {
+    city: string;
+    state: string;
+  };
+  condition: string;
+  description: string;
+  price: number;
+  isNegotiable: boolean;
+}
+
+
 export const requestsApi = {
+  // Create new request
+  createRequest: async (requestData: CreateRequestData): Promise<{ 
+  success: boolean; 
+  message: string; 
+  data: Request 
+}> => {
+  const formData = new FormData();
+  
+  console.log('📦 Creating request with data:', {
+    category: requestData.category,
+    title: requestData.title,
+    location: requestData.location,
+    condition: requestData.condition,
+    price: requestData.price,
+    isNegotiable: requestData.isNegotiable,
+    productImagesCount: requestData.productImages.length,
+    videoLink: requestData.videoLink
+  });
+
+  // Append basic fields
+  formData.append('category', requestData.category);
+  formData.append('title', requestData.title);
+  formData.append('description', requestData.description);
+  formData.append('price', requestData.price.toString());
+  formData.append('condition', requestData.condition);
+  formData.append('isNegotiable', requestData.isNegotiable.toString());
+  
+  // Append location as JSON string
+  if (requestData.location) {
+    formData.append('location', JSON.stringify({
+      city: requestData.location.city || '',
+      state: requestData.location.state || ''
+    }));
+  } else {
+    console.warn('⚠️ Location data is missing, using empty values');
+    formData.append('location', JSON.stringify({
+      city: '',
+      state: ''
+    }));
+  }
+  
+  if (requestData.videoLink) {
+    formData.append('videoLink', requestData.videoLink);
+  }
+  
+  // Append images
+  requestData.productImages.forEach((image, index) => {
+    console.log(`📸 Appending image ${index + 1}:`, image.name, image.type);
+    formData.append('productImages', image);
+  });
+
+  // Log FormData contents for debugging
+  console.log('📋 FormData contents:');
+  for (let [key, value] of formData.entries()) {
+    if (key === 'productImages') {
+      console.log(`  ${key}:`, (value as File).name, (value as File).type);
+    } else if (key === 'location') {
+      console.log(`  ${key}:`, value); // This will show the JSON string
+    } else {
+      console.log(`  ${key}:`, value);
+    }
+  }
+
+  try {
+    const response = await apiClient.post('/requests', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    console.log('✅ Request creation successful:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Request creation failed:', error);
+    throw error;
+  }
+},
+
   // Fetch all requests
   getRequests: async (): Promise<Request[]> => {
     const response = await apiClient.get('/requests/');
@@ -83,8 +177,8 @@ export const requestsApi = {
     return response.data;
   },
 
-  createRequest: async (requestData: any): Promise<Request> => {
-    const response = await apiClient.post('/requests/', requestData);
-    return response.data;
-  },
+  // createRequest: async (requestData: any): Promise<Request> => {
+  //   const response = await apiClient.post('/requests/', requestData);
+  //   return response.data;
+  // },
 };

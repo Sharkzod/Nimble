@@ -284,26 +284,39 @@ export default function OrderChatPage(props: OrderChatPageProps) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {/* Product Card */}
-        <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-          {currentOrder.productImage ? (
-            <img
-              src={currentOrder.productImage}
-              alt={currentOrder.productName}
-              className="w-14 h-14 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-lg bg-orange-200 flex items-center justify-center">
-              <div className="w-8 h-10 bg-orange-500 rounded" />
+         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            {currentOrder.productImage ? (
+              <img
+                src={currentOrder.productImage}
+                alt={currentOrder.productName}
+                className="w-14 h-14 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-lg bg-orange-200 flex items-center justify-center">
+                <div className="w-8 h-10 bg-orange-500 rounded" />
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="text-sm text-gray-900 font-medium">
+                {currentOrder.productName}
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                ₦{currentOrder.amount.toLocaleString()}
+              </p>
             </div>
-          )}
-          <div className="flex-1">
-            <p className="text-sm text-gray-900 font-medium">
-              {currentOrder.productName}
-            </p>
-            <p className="text-lg font-bold text-gray-900">
-              ₦{currentOrder.amount.toLocaleString()}
-            </p>
+            <div className="flex gap-2">
+            <button className="flex-1 px-4 py-2 text-orange-600 font-medium text-[12px] hover:bg-orange-50 rounded-lg transition-colors">
+              View product details
+            </button>
+            <button className="px-6 py-2 bg-blue-600 text-white font-medium text-[12px] rounded-full hover:bg-blue-700 transition-colors">
+              Make an offer
+            </button>
           </div>
+          </div>
+          
+          {/* Action Buttons */}
+          
         </div>
 
         {/* Warning Banner */}

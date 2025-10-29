@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Star } from 'lucide-react';
+import Link from 'next/link'; // Add this import
 import { useFetchMostViewed } from '../lib/hooks/useProductApis/useFetchMostViewed';
 import { Product } from '../lib/api/productsApi';
+
 const MostViewedSection: React.FC = () => {
   const { data: mostViewedProducts, loading, error, refetch } = useFetchMostViewed();
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
@@ -47,10 +49,7 @@ const MostViewedSection: React.FC = () => {
     ));
   };
 
-  const handleProductClick = (productId: string) => {
-    console.log('Product clicked:', productId);
-    // You can navigate to product detail page here
-  };
+  // Remove the handleProductClick function since we'll use Link instead
 
   // Loading state
   if (loading) {
@@ -108,10 +107,10 @@ const MostViewedSection: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {localProducts.length > 0 ? (
           localProducts.map((product) => (
-            <div
+            <Link
               key={product.id}
-              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-              onClick={() => handleProductClick(product.id)}
+              href={`/product/${product.id}`} // This will redirect to the product page
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group block" // Added 'block' class
             >
               {/* Product Image */}
               <div className="relative aspect-square bg-gray-100">
@@ -128,6 +127,7 @@ const MostViewedSection: React.FC = () => {
                 {/* Wishlist Button */}
                 <button
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     toggleWishlist(product.id);
                   }}
@@ -182,7 +182,7 @@ const MostViewedSection: React.FC = () => {
                   </p>
                 )}
               </div>
-            </div>
+            </Link>
           ))
         ) : (
           <div className="col-span-full text-center py-8">

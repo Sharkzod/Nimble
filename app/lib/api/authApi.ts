@@ -72,8 +72,20 @@ export const authApi = {
   },
 
   // Check if user is authenticated
-  checkAuth: (): Promise<ApiResponse<User>> => apiClient.get<User>('/auth/me'),
-
+checkAuth: async (): Promise<ApiResponse<User>> => {
+    try {
+      const response = await apiClient.get<User>('/auth/me');
+      return response;
+    } catch (error: any) {
+      console.error('Auth check failed:', error);
+      // Clear token if auth check fails
+      if (error.response?.status === 401) {
+        clearToken();
+      }
+      throw error;
+    }
+  },
+  
   // Refresh token
   refreshToken: (token: string): Promise<ApiResponse<AuthResponse>> => 
     apiClient.post<AuthResponse>('/auth/refresh', { token }),

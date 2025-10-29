@@ -1,73 +1,34 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Header from '@/app/components/TopBar';
 import VerticalNavMenu from '@/app/components/SidebarNavigation';
 import Footer from '@/app/components/Footer';
 import MobileTopBar from '@/app/components/MobileTopBar';
 import BottomNavigation from '@/app/components/BottomNav';
-import { useFetchVendorProducts } from '@/app/lib/hooks/useProductApis/useFetchVendorProducts';
-import { useAuthStore } from '@/app/lib/stores/useAuthStore';
+import { useFetchVendorProducts } from '../lib/hooks/useProductApis/useFetchVendorProducts';
+import { Product } from '../lib/api/productsApi';
 
-type ListingTab = 'active' | 'pending' | 'renew' | 'sold' | 'drafts' | 'unpaid';
+// type ListingTab = 'active' | 'pending' | 'renew' | 'sold' | 'drafts' | 'unpaid';
 
 const UnifiedListingsComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ListingTab>('active');
   const [vendorId, setVendorId] = useState<string | null>(null);
-  const router = useRouter();
-  
-  // Use your existing auth store
-  const { user, isLoading: authLoading, isAuthenticated, hasHydrated } = useAuthStore();
 
-  // Get vendor ID from auth store with proper hydration handling
-  // In your useEffect, add this debug log:
-useEffect(() => {
-  console.log('🔍 Auth Status:', {
-    hasHydrated,
-    isAuthenticated,
-    user: user ? 'exists' : 'missing',
-    authLoading,
-    fullUserObject: user // Add this line to see the entire user object
-  });
-
-  // If store hasn't hydrated yet, wait
-  if (!hasHydrated) {
-    console.log('⏳ Waiting for auth store hydration...');
-    return;
-  }
-
-  // Store has hydrated, now check authentication
-  if (!isAuthenticated || !user) {
-    console.log('❌ User not authenticated after hydration, redirecting to login...');
-    router.push('/login');
-    return;
-  }
-
-  // Debug the user object structure
-  console.log('👤 User Object Structure:', {
-    keys: Object.keys(user),
-    id: user.id,
-    _id: user._id,
-    userId: user.userId,
-    vendorId: user.vendorId
-  });
-
-  // Try different possible ID fields
-  const possibleVendorId = user.id || user._id || user.userId || user.vendorId;
-  
-  if (!possibleVendorId) {
-    console.error('❌ No vendor ID found in user object:', user);
-    return;
-  }
-
-  console.log('✅ User authenticated, setting vendor ID:', possibleVendorId);
-  setVendorId(possibleVendorId);
-}, [user, isAuthenticated, hasHydrated, authLoading, router]);
+  // Get vendor ID from localStorage or auth context
+  useEffect(() => {
+    const userId = localStorage.getItem('userId'); // Replace with your actual auth logic
+    // const userId = '67b5e07ba81374c888d0ef61'; // For testing
+    if (userId) {
+      setVendorId(userId);
+    } else {
+      console.error('No vendor ID found. User might not be logged in.');
+    }
+  }, []);
 
   const { 
     data, 
-    loading: productsLoading, 
+    loading, 
     error, 
     refetch,
     activeProducts,
@@ -87,67 +48,6 @@ useEffect(() => {
     { id: 'unpaid', label: 'To Pay', count: unpaidProducts.length },
   ];
 
-  // Show loading state ONLY while auth store is hydrating or checking auth
-  if (!hasHydrated || authLoading) {
-    return (
-      <div className="w-full flex flex-col min-h-screen">
-        <div className="hidden md:block">
-          <Header/>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">
-              {!hasHydrated ? 'Loading authentication...' : 'Checking user...'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show message if not authenticated (after hydration)
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="w-full flex flex-col min-h-screen">
-        <div className="hidden md:block">
-          <Header/>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-gray-400 text-6xl mb-4">🔒</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-            <p className="text-gray-600 mb-6">Please log in to view your listings.</p>
-            <button 
-              onClick={() => router.push('/login')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Go to Login
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show brief loading while vendorId is being set (after auth is confirmed)
-  if (!vendorId) {
-    return (
-      <div className="w-full flex flex-col min-h-screen">
-        <div className="hidden md:block">
-          <Header/>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your listings...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // MAIN COMPONENT CONTENT - Only renders when user is authenticated and vendorId is set
   const formatPrice = (price: number) => {
     return `₦${price?.toLocaleString() || '0'}`;
   };
@@ -239,7 +139,7 @@ useEffect(() => {
     }
   };
 
-  const getProductsForTab = (tab: ListingTab) => {
+  const getProductsForTab = (tab: ListingTab): Product[] => {
     switch (tab) {
       case 'active': return activeProducts;
       case 'pending': return pendingProducts;
@@ -251,7 +151,7 @@ useEffect(() => {
     }
   };
 
-  const renderListingsGrid = (products: any[]) => {
+  const renderListingsGrid = (products: Product[]) => {
     const buttonConfig = getButtonConfig(activeTab);
 
     if (products.length === 0) {
@@ -358,7 +258,7 @@ useEffect(() => {
   const renderTabContent = () => {
     const currentProducts = getProductsForTab(activeTab);
 
-    if (productsLoading) {
+    if (loading) {
       return (
         <div className="w-full max-w-4xl mx-auto p-6">
           <div className="animate-pulse">

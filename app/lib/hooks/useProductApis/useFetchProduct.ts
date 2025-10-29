@@ -1,4 +1,3 @@
-// lib/hooks/useProductApis/useFetchProduct.ts
 import { useState, useEffect } from 'react';
 import { productApi } from '../../api/productsApi';
 
@@ -9,9 +8,16 @@ interface Product {
   price: number;
   images?: string[];
   category?: string | { _id: string; name: string };
-  vendor?: string | { _id: string; name: string };
+  vendor?: string | { _id: string; businessName: string; location?: string };
   description?: string;
   stock?: number;
+  isWishlisted?: boolean;
+  condition?: string;
+  gender?: string;
+  sizes?: string[];
+  colors?: string[];
+  bulkPricing?: Array<{ quantity: number; price: number }>;
+  // Add other fields from your backend
   [key: string]: any;
 }
 
@@ -49,43 +55,72 @@ export const useFetchProduct = (productId: string | undefined): UseFetchProductR
       
       // Fetch main product details
       const productResponse = await productApi.getProductById(productId);
-      console.log('✅ Product details:', productResponse.data);
+      console.log('✅ Product API Response:', productResponse.data);
       
       if (productResponse.data?.product) {
         const fetchedProduct = productResponse.data.product;
         setProduct(fetchedProduct);
-        console.log('✅ Product name:', fetchedProduct.name);
+        console.log('✅ Product set:', fetchedProduct.name);
+        
+        // Extract category ID safely
+        const categoryId = typeof fetchedProduct.category === 'object' 
+          ? fetchedProduct.category?._id 
+          : fetchedProduct.category;
+        
+        // Extract vendor ID safely
+        const vendorId = typeof fetchedProduct.vendor === 'object'
+          ? fetchedProduct.vendor?._id
+          : fetchedProduct.vendor;
+
+        console.log('🔄 Category ID:', categoryId);
+        console.log('🔄 Vendor ID:', vendorId);
         
         // Fetch similar products based on category
-        const categoryId = typeof fetchedProduct.category === 'object' 
-          ? fetchedProduct.category._id 
-          : fetchedProduct.category;
-          
         if (categoryId) {
-          const similarResponse = await productApi.getSimilarProducts(categoryId, { limit: 8 });
-          console.log('✅ Similar products:', similarResponse.data);
-          setSimilarProducts(similarResponse.data.products || []);
+          try {
+            console.log('🔄 Fetching similar products...');
+            const similarResponse = await productApi.getSimilarProducts(categoryId, { limit: 8 });
+            console.log('✅ Similar products:', similarResponse.data.products?.length || 0);
+            setSimilarProducts(similarResponse.data.products || similarResponse.data || []);
+          } catch (similarErr) {
+            console.warn('⚠️ Could not fetch similar products:', similarErr);
+            // Fallback: try getting products by category using getAllProducts
+            try {
+              const fallbackResponse = await productApi.getAllProducts({ 
+                category: categoryId,
+                limit: 8 
+              });
+              setSimilarProducts(fallbackResponse.data.products || fallbackResponse.data || []);
+            } catch (fallbackErr) {
+              console.warn('⚠️ Fallback for similar products also failed:', fallbackErr);
+              setSimilarProducts([]);
+            }
+          }
+        } else {
+          setSimilarProducts([]);
         }
         
         // Fetch other products from the same seller
-        if (fetchedProduct.vendor) {
-          const vendorId = typeof fetchedProduct.vendor === 'object'
-            ? fetchedProduct.vendor._id
-            : fetchedProduct.vendor;
-            
+        if (vendorId) {
           try {
-            // Option 1: Use getAllProducts with vendor filter
+            console.log('🔄 Fetching seller products...');
             const sellerResponse = await productApi.getAllProducts({ 
               vendor: vendorId,
               limit: 8 
             });
-            console.log('✅ Seller products:', sellerResponse.data);
-            setSellerProducts(sellerResponse.data.products || sellerResponse.data || []);
+            console.log('✅ Seller products:', sellerResponse.data.products?.length || 0);
+            
+            // Filter out the current product from seller products
+            const otherSellerProducts = (sellerResponse.data.products || sellerResponse.data || [])
+              .filter((p: Product) => p._id !== productId);
+              
+            setSellerProducts(otherSellerProducts);
           } catch (vendorErr) {
             console.warn('⚠️ Could not fetch seller products:', vendorErr);
-            // Don't fail the entire request if seller products fail
             setSellerProducts([]);
           }
+        } else {
+          setSellerProducts([]);
         }
       } else {
         setError('Product not found');
@@ -96,7 +131,7 @@ export const useFetchProduct = (productId: string | undefined): UseFetchProductR
       console.error('Error:', err);
       console.error('Error Response:', err.response);
       
-      const errorMessage = err.response?.data?.message || 'Failed to fetch product data';
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch product data';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -106,7 +141,6 @@ export const useFetchProduct = (productId: string | undefined): UseFetchProductR
 
   useEffect(() => {
     fetchProductData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   return {

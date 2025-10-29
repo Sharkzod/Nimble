@@ -44,7 +44,7 @@ interface WishlistResponse {
 export const productApi = {
   // Get all products with pagination
   getAllProducts: (params: any = {}): Promise<any> => 
-    apiClient.get('/products/get-products', { params }),
+    apiClient.get('/products/', { params }),
 
    getMostViewed: async (): Promise<Product[]> => {
     const response = await apiClient.get('/products/most-viewed');
@@ -81,15 +81,82 @@ export const productApi = {
       return [];
     }
   },
+  
+  getVendorProducts: async (vendorId: string): Promise<Product[]> => {
+    const response = await apiClient.get(`/products/vendor/${vendorId}/products`);
+    
+    console.log('Vendor Products API Response:', response.data);
+    
+    if (response.data && Array.isArray(response.data.products)) {
+      const products = response.data.products;
+      console.log('Extracted vendor products:', products);
+      
+      return products.map((product: any) => ({
+        id: product._id || product.id,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        rating: product.averageRating || product.rating || 0,
+        maxRating: 5,
+        image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.jpg',
+        location: product.location ? `${product.location.city}, ${product.location.state}` : 'Location not specified',
+        isWishlisted: false,
+        views: product.views,
+        purchases: product.purchases,
+        description: product.description,
+        category: product.category,
+        condition: product.condition,
+        images: product.images,
+        vendor: product.vendor,
+        status: product.status || 'active', // Default status
+        createdAt: product.createdAt,
+        listedOn: product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }) : 'Unknown date'
+      }));
+    } else if (Array.isArray(response.data)) {
+      // If API directly returns array
+      return response.data.map((product: any) => ({
+        id: product._id || product.id,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        rating: product.averageRating || product.rating || 0,
+        maxRating: 5,
+        image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.jpg',
+        location: product.location ? `${product.location.city}, ${product.location.state}` : 'Location not specified',
+        isWishlisted: false,
+        views: product.views,
+        purchases: product.purchases,
+        description: product.description,
+        category: product.category,
+        condition: product.condition,
+        images: product.images,
+        vendor: product.vendor,
+        status: product.status || 'active',
+        createdAt: product.createdAt,
+        listedOn: product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }) : 'Unknown date'
+      }));
+    } else {
+      console.warn('Unexpected vendor products API response format:', response.data);
+      return [];
+    }
+  },
 
   getProductReviews: (productId: string): Promise<any> => 
-    apiClient.get(`/products/${productId}/reviews`),
+    apiClient.get(`/reviews/product/${productId}`),
 
   getSimilarProducts: (categoryId: string, params: any = {}): Promise<any> => 
     apiClient.get(`/products/category/${categoryId}`, { params }),
   
   getProductById: (productId: string): Promise<any> => 
-    apiClient.get(`/products/get-product/${productId}`),
+    apiClient.get(`/products/${productId}`),
 
   getProductsByCategory: (categoryId: string, params: any = {}): Promise<any> => 
     apiClient.get(`/products/category/${categoryId}`, { params }),
@@ -99,8 +166,8 @@ export const productApi = {
       params: { ...params, query } 
     }),
 
-  getVendorProducts: (vendorId: string, params: any = {}): Promise<any> => 
-    apiClient.get(`/products/vendor/${vendorId}`, { params }),
+  // getVendorProducts: (vendorId: string, params: any = {}): Promise<any> => 
+  //   apiClient.get(`/products/vendor/${vendorId}`, { params }),
 
   addToWishlist: (productId: string): Promise<any> => 
     apiClient.post(`/wishlist/${productId}`),
