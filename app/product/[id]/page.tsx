@@ -10,6 +10,7 @@ import Footer from '@/app/components/Footer'
 import { useFetchProduct } from '../../lib/hooks/useProductApis/useFetchProduct'
 import { useWishlist } from '../../lib/hooks/useProductApis/useWishlist'
 import BottomNavigation from '@/app/components/BottomNav'
+// import { Product } from '@/app/lib/api/productsApi'
 
 interface Product {
   _id: string;
@@ -105,21 +106,22 @@ const Product = () => {
   };
 
   // Image gallery functions
-  const nextImage = () => {
-    if (product && product.images.length > 0) {
-      setCurrentImageIndex((prev) => 
-        prev === product.images.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
+ const nextImage = () => {
+  if (product && product.images && product.images.length > 0) {
+    setCurrentImageIndex((prev) => 
+      prev === product.images!.length - 1 ? 0 : prev + 1
+    );
+  }
+};
 
-  const prevImage = () => {
-    if (product && product.images.length > 0) {
-      setCurrentImageIndex((prev) => 
-        prev === 0 ? product.images.length - 1 : prev - 1
-      );
-    }
-  };
+
+ const prevImage = () => {
+  if (product && product.images && product.images.length > 0) {
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? product.images!.length - 1 : prev - 1
+    );
+  }
+};
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
@@ -457,7 +459,7 @@ const Product = () => {
             </div>
             
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-              {currentImageIndex + 1} / {product.images.length}
+              {currentImageIndex + 1} / {(product.images && product.images.length) || 0}
             </div>
           </div>
            <div className="flex justify-between items-center">
