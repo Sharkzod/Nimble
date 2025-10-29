@@ -154,19 +154,19 @@ const Product = () => {
   };
 
   // Get default colors from product or use fallback
-  const getProductColors = (): ColorOption[] => {
-    if (product?.colours && product.colours.length > 0) {
-      return product.colours.map(color => ({
-        color: color,
-        name: color
-      }));
-    }
-    return [
-      { color: '#FF6B6B', name: 'Red' },
-      { color: '#000000', name: 'Black' },
-      { color: '#5B73E8', name: 'Blue' }
-    ];
-  };
+const getProductColors = (): ColorOption[] => {
+  if (product?.colours && product.colours.length > 0) {
+    return product.colours.map((color: string) => ({
+      color: color,
+      name: color
+    }));
+  }
+  return [
+    { color: '#FF6B6B', name: 'Red' },
+    { color: '#000000', name: 'Black' },
+    { color: '#5B73E8', name: 'Blue' }
+  ];
+};
 
   // Loading skeleton for products
   const renderProductsSkeleton = () => (
