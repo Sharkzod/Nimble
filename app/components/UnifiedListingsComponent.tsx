@@ -9,7 +9,7 @@ import BottomNavigation from '@/app/components/BottomNav';
 import { useFetchVendorProducts } from '../lib/hooks/useProductApis/useFetchVendorProducts';
 import { Product } from '../lib/api/productsApi';
 
-// type ListingTab = 'active' | 'pending' | 'renew' | 'sold' | 'drafts' | 'unpaid';
+type ListingTab = 'active' | 'pending' | 'renew' | 'sold' | 'drafts' | 'unpaid';
 
 const UnifiedListingsComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ListingTab>('active');
