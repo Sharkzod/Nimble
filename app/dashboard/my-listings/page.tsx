@@ -21,14 +21,12 @@ const UnifiedListingsComponent: React.FC = () => {
   const { user, isLoading: authLoading, isAuthenticated, hasHydrated } = useAuthStore();
 
   // Get vendor ID from auth store with proper hydration handling
-  // In your useEffect, add this debug log:
 useEffect(() => {
   console.log('🔍 Auth Status:', {
     hasHydrated,
     isAuthenticated,
     user: user ? 'exists' : 'missing',
-    authLoading,
-    fullUserObject: user // Add this line to see the entire user object
+    authLoading
   });
 
   // If store hasn't hydrated yet, wait
@@ -44,25 +42,14 @@ useEffect(() => {
     return;
   }
 
-  // Debug the user object structure
-  console.log('👤 User Object Structure:', {
-    keys: Object.keys(user),
-    id: user.id,
-    _id: user._id,
-    userId: user.userId,
-    vendorId: user.vendorId
-  });
-
-  // Try different possible ID fields
-  const possibleVendorId = user.id || user._id || user.userId || user.vendorId;
-  
-  if (!possibleVendorId) {
-    console.error('❌ No vendor ID found in user object:', user);
+  // Use user.id directly since it's the only property we know exists
+  if (!user.id) {
+    console.error('❌ No user ID found in user object');
     return;
   }
 
-  console.log('✅ User authenticated, setting vendor ID:', possibleVendorId);
-  setVendorId(possibleVendorId);
+  console.log('✅ User authenticated, setting vendor ID:', user.id);
+  setVendorId(user.id);
 }, [user, isAuthenticated, hasHydrated, authLoading, router]);
 
   const { 
