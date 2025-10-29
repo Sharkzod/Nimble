@@ -17,7 +17,7 @@ interface Product {
   name: string;
   price: number;
   originalPrice?: number;
-  rating: number;
+  rating?: number;
   images: string[];
   vendor?: {
     _id: string;
