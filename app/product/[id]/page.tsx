@@ -23,7 +23,7 @@ interface Product {
     _id: string;
     businessName: string;
     location?: string;
-  };
+  } | string; // Allow vendor to be string or object
   category?: {
     _id: string;
     name: string;
@@ -40,6 +40,7 @@ interface Product {
     price: number;
   }[];
   colours?: string[];
+  status?: string; // Add missing status property
 }
 
 interface ColorOption {
@@ -104,6 +105,19 @@ const Product = () => {
   const handleProductClick = (productId: string) => {
     router.push(`/product/${productId}`);
   };
+
+  const getVendorLocation = (vendor: Product['vendor']): string => {
+  if (!vendor) return 'Location not specified';
+  if (typeof vendor === 'string') return vendor;
+  return vendor.location || 'Location not specified';
+};
+
+// Add a helper function to safely get vendor business name
+const getVendorBusinessName = (vendor: Product['vendor']): string => {
+  if (!vendor) return 'Unknown Vendor';
+  if (typeof vendor === 'string') return vendor;
+  return vendor.businessName || 'Unknown Vendor';
+};
 
   // Image gallery functions
  const nextImage = () => {
@@ -251,7 +265,7 @@ const getProductColors = (): ColorOption[] => {
             <div className="flex justify-between items-start">
               <div className="flex items-center text-gray-600">
                 <MapPin className="w-4 h-4 mr-1" />
-                <span className="text-sm">{product.vendor?.location || 'Location not specified'}</span>
+                <span className="text-sm">{getVendorLocation(product.vendor)}</span>
               </div>
               <span className="text-sm text-gray-500">Promoted</span>
             </div>
@@ -403,7 +417,7 @@ const getProductColors = (): ColorOption[] => {
         </div>
 
         {/* Vendor Address */}
-        {product.vendor && (
+        {product.vendor && typeof product.vendor === 'object' && (
           <div className="mt-8 bg-gray-50 rounded-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Seller Address</h2>
             <div className="flex items-start">
@@ -465,7 +479,7 @@ const getProductColors = (): ColorOption[] => {
            <div className="flex justify-between items-center">
             <div className="flex items-center text-gray-600">
               <MapPin className="w-4 h-4 mr-1" />
-              <span className="text-sm">{product.vendor?.location || 'Location not specified'}</span>
+              <span className="text-sm">{getVendorLocation(product.vendor)}</span>
             </div>
             <div className="flex items-center gap-1">
               {renderStars(product.rating)}
@@ -619,7 +633,7 @@ const getProductColors = (): ColorOption[] => {
         </h3>
 
         <p className="text-xs text-gray-600 mb-2">
-          By {product.vendor?.businessName || 'Unknown Vendor'}
+          By {getVendorBusinessName(product.vendor)}
         </p>
 
         <div className="flex items-center gap-2 mb-2">
@@ -634,7 +648,7 @@ const getProductColors = (): ColorOption[] => {
         </div>
 
         <p className="text-xs text-gray-500">
-          {product.vendor?.location || 'Location not specified'}
+          {getVendorLocation(product.vendor)}
         </p>
       </div>
     </div>
@@ -691,10 +705,10 @@ const getProductColors = (): ColorOption[] => {
       <MobileProductDetail />
       
       <ReviewsSectionComponent 
-        productId={productId}
-        vendor={product?.vendor}
-        loading={loading}
-      />
+      productId={productId}
+      vendor={typeof product?.vendor === 'object' ? product.vendor : undefined}
+      loading={loading}
+    />
       
       {/* Similar Items */}
       <div className='w-[90%] mx-auto'>
