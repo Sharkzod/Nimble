@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { productApi, Product } from '../../api/productsApi';
 
+
 export const useFetchVendorProducts = (vendorId: string | null) => {
   const [data, setData] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

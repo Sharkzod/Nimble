@@ -19,7 +19,12 @@ export interface Product {
   condition?: string;
   images?: string[];
   vendor?: string;
+  // Add status property
+  status?: string;
+  createdAt?: string;
+  listedOn?: string;
 }
+
 
 interface BaseResponse<T> {
   success: boolean;
