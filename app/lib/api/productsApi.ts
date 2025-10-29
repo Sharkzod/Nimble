@@ -21,7 +21,6 @@ export interface Product {
   vendor?: string;
 }
 
-
 interface BaseResponse<T> {
   success: boolean;
   message?: string;
@@ -46,7 +45,13 @@ export const productApi = {
   getAllProducts: (params: any = {}): Promise<any> => 
     apiClient.get('/products/', { params }),
 
-   getMostViewed: async (): Promise<Product[]> => {
+  // Create new product
+  createProduct: async (productData: any): Promise<any> => {
+    const response = await apiClient.post('/products', productData);
+    return response.data;
+  },
+
+  getMostViewed: async (): Promise<Product[]> => {
     const response = await apiClient.get('/products/most-viewed');
     
     console.log('Raw API Response:', response.data);
@@ -165,9 +170,6 @@ export const productApi = {
     apiClient.get('/products/search', { 
       params: { ...params, query } 
     }),
-
-  // getVendorProducts: (vendorId: string, params: any = {}): Promise<any> => 
-  //   apiClient.get(`/products/vendor/${vendorId}`, { params }),
 
   addToWishlist: (productId: string): Promise<any> => 
     apiClient.post(`/wishlist/${productId}`),
