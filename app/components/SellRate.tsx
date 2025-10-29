@@ -200,7 +200,7 @@ const SellRate: React.FC = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
                 <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
-                  {userInfo.businessName}
+                  {userInfo.displayName}
                 </h3>
                 {userInfo.isVerified && (
                   <div className="bg-green-500 rounded-full p-0.5 flex-shrink-0">
@@ -304,7 +304,7 @@ const SellRate: React.FC = () => {
           {/* User Details */}
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-gray-900 text-base xl:text-lg">{userInfo.businessName}</h3>
+              <h3 className="font-bold text-gray-900 text-base xl:text-lg">{userInfo.displayName}</h3>
               {userInfo.isVerified && (
                 <div className="bg-green-500 rounded-full p-1 flex-shrink-0">
                   <CheckCircle className="w-3 h-3 xl:w-4 xl:h-4 text-white" fill="currentColor" />
@@ -411,7 +411,7 @@ const SellRate: React.FC = () => {
           
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-gray-900 text-base">{userInfo.businessName}</h3>
+              <h3 className="font-bold text-gray-900 text-base">{userInfo.displayName}</h3>
               {userInfo.isVerified && (
                 <div className="bg-green-500 rounded-full p-0.5 flex-shrink-0">
                   <CheckCircle className="w-3 h-3 text-white" fill="currentColor" />
