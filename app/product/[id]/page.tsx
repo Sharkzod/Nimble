@@ -517,7 +517,7 @@ const getProductColors = (): ColorOption[] => {
                 <div className="border-t border-gray-200 pt-4">
                   <h3 className="font-semibold text-gray-900 mb-2">Bulk price</h3>
                   <div className="space-y-1">
-                    {product.bulkPrices.map((bulk, index) => (
+                    {product.bulkPrices.map((bulk: { quantity: number; price: number }, index: number) => (
                       <div key={index} className="flex justify-between text-gray-700 text-sm">
                         <span>From {bulk.quantity} pieces</span>
                         <span className="font-semibold">{formatPrice(bulk.price)}</span>
