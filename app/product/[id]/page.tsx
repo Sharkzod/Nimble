@@ -89,18 +89,19 @@ const Product = () => {
     return `₦${price.toLocaleString()}`;
   };
 
-  const renderStars = (rating: number, maxRating: number = 5) => {
-    return Array.from({ length: maxRating }, (_, index) => (
-      <Star
-        key={index}
-        className={`w-4 h-4 ${
-          index < Math.floor(rating)
-            ? 'fill-yellow-400 text-yellow-400'
-            : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
+  const renderStars = (rating: number | undefined, maxRating: number = 5) => {
+  const safeRating = rating || 0; // Use 0 if rating is undefined
+  return Array.from({ length: maxRating }, (_, index) => (
+    <Star
+      key={index}
+      className={`w-4 h-4 ${
+        index < Math.floor(safeRating)
+          ? 'fill-yellow-400 text-yellow-400'
+          : 'text-gray-300'
+      }`}
+    />
+  ));
+};
 
   const handleProductClick = (productId: string) => {
     router.push(`/product/${productId}`);
@@ -586,73 +587,73 @@ const getProductColors = (): ColorOption[] => {
   };
 
   // Render product card component
-  const ProductCard = ({ product }: { product: Product }) => (
-    <div
-      className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
-      onClick={() => handleProductClick(product._id)}
-    >
-      <div className="relative aspect-square bg-gray-100">
-        <img
-          src={product.images?.[0] || '/placeholder-product.png'}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = '/placeholder-product.png';
-          }}
+ const ProductCard = ({ product }: { product: Product }) => (
+  <div
+    className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
+    onClick={() => handleProductClick(product._id)}
+  >
+    <div className="relative aspect-square bg-gray-100">
+      <img
+        src={product.images?.[0] || '/placeholder-product.png'}
+        alt={product.name}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = '/placeholder-product.png';
+        }}
+      />
+      
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleWishlistToggle(product._id, product.isWishlisted || false);
+        }}
+        disabled={wishlistLoading}
+        className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
+      >
+        <Heart
+          className={`w-4 h-4 ${
+            product.isWishlisted
+              ? 'fill-red-500 text-red-500'
+              : 'text-gray-600 hover:text-red-500'
+          }`}
         />
-        
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleWishlistToggle(product._id, product.isWishlisted || false);
-          }}
-          disabled={wishlistLoading}
-          className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
-        >
-          <Heart
-            className={`w-4 h-4 ${
-              product.isWishlisted
-                ? 'fill-red-500 text-red-500'
-                : 'text-gray-600 hover:text-red-500'
-            }`}
-          />
-        </button>
-      </div>
-
-      <div className="p-4">
-        <div className="flex items-center gap-1 mb-2">
-          {renderStars(product.rating)}
-          <span className="text-xs text-gray-500 ml-1">
-            ({product.rating})
-          </span>
-        </div>
-
-        <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-          {product.name}
-        </h3>
-
-        <p className="text-xs text-gray-600 mb-2">
-          By {getVendorBusinessName(product.vendor)}
-        </p>
-
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg font-bold text-gray-900">
-            {formatPrice(product.price)}
-          </span>
-          {product.originalPrice && product.originalPrice > product.price && (
-            <span className="text-sm text-gray-500 line-through">
-              {formatPrice(product.originalPrice)}
-            </span>
-          )}
-        </div>
-
-        <p className="text-xs text-gray-500">
-          {getVendorLocation(product.vendor)}
-        </p>
-      </div>
+      </button>
     </div>
-  );
+
+    <div className="p-4">
+      <div className="flex items-center gap-1 mb-2">
+        {renderStars(product.rating)}
+        <span className="text-xs text-gray-500 ml-1">
+          ({product.rating || 0})
+        </span>
+      </div>
+
+      <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+        {product.name}
+      </h3>
+
+      <p className="text-xs text-gray-600 mb-2">
+        By {getVendorBusinessName(product.vendor)}
+      </p>
+
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg font-bold text-gray-900">
+          {formatPrice(product.price)}
+        </span>
+        {product.originalPrice && product.originalPrice > product.price && (
+          <span className="text-sm text-gray-500 line-through">
+            {formatPrice(product.originalPrice)}
+          </span>
+        )}
+      </div>
+
+      <p className="text-xs text-gray-500">
+        {getVendorLocation(product.vendor)}
+      </p>
+    </div>
+  </div>
+);
 
   // Error state
   if (error && !product) {
