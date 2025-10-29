@@ -18,12 +18,12 @@ interface Product {
   price: number;
   originalPrice?: number;
   rating?: number;
-  images: string[];
+  images?: string[]; // Make images optional
   vendor?: {
     _id: string;
     businessName: string;
     location?: string;
-  } | string; // Allow vendor to be string or object
+  } | string;
   category?: {
     _id: string;
     name: string;
@@ -40,7 +40,7 @@ interface Product {
     price: number;
   }[];
   colours?: string[];
-  status?: string; // Add missing status property
+  status?: string;
 }
 
 interface ColorOption {
@@ -587,14 +587,15 @@ const getProductColors = (): ColorOption[] => {
   };
 
   // Render product card component
- const ProductCard = ({ product }: { product: Product }) => (
+// Render product card component
+const ProductCard = ({ product }: { product: Product }) => (
   <div
     className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
     onClick={() => handleProductClick(product._id)}
   >
     <div className="relative aspect-square bg-gray-100">
       <img
-        src={product.images?.[0] || '/placeholder-product.png'}
+        src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
         alt={product.name}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
         onError={(e) => {
