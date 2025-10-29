@@ -18,7 +18,7 @@ interface Product {
   price: number;
   originalPrice?: number;
   rating?: number;
-  images?: string[]; // Make images optional
+  images?: string[];
   vendor?: {
     _id: string;
     businessName: string;
@@ -27,7 +27,7 @@ interface Product {
   category?: {
     _id: string;
     name: string;
-  };
+  } | string; // Allow category to be string or object
   description?: string;
   isWishlisted?: boolean;
   type?: string;
