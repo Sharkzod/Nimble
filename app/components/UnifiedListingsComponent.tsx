@@ -210,7 +210,7 @@ const UnifiedListingsComponent: React.FC = () => {
                 {/* Status and Listed Date */}
                 <div className="mb-2 mt-2">
                   <span className="flex justify-between text-[10px] border-t border-gray-300 py-1 text-black">
-                    Listed on {product.listedOn || 'Unknown date'}
+                    Listed on {(product as any).listedOn || (product as any).createdAt || 'Unknown date'}
                     <div className={`text-[10px] ${getStatusColor(product.status || activeTab)}`}>
                       {getDisplayStatus(product.status || '', activeTab)}
                     </div>
