@@ -1,5 +1,26 @@
 import { useState } from 'react';
-import { productApi, CreateProductData, Product } from '../../api/productsApi';
+import { productApi, Product } from '../../api/productsApi';
+
+// Define CreateProductData locally
+interface CreateProductData {
+  name: string;
+  price: number;
+  description?: string;
+  category?: string;
+  images?: string[];
+  vendor?: string;
+  type?: string;
+  color?: string;
+  condition?: string;
+  gender?: string;
+  sizes?: string[];
+  bulkPrices?: {
+    quantity: number;
+    price: number;
+  }[];
+  colours?: string[];
+  // Add other product fields as needed
+}
 
 interface UseCreateProductReturn {
   createProduct: (productData: CreateProductData) => Promise<void>;
