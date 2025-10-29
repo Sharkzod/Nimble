@@ -110,12 +110,12 @@ const SellRate: React.FC = () => {
 
   // Default user info from authenticated user
   const userInfo = {
-    name: user ? `${user.firstName} ${user.lastName}` : 'Guest User',
-    businessName: user?.businessName || `${user?.firstName} ${user?.lastName}`,
-    isVerified: user?.isVerified || false,
-    location: user?.location || 'Location not specified',
-    avatar: user?.avatar || '/avatars/default.jpg'
-  };
+  name: user ? `${user.firstName} ${user.lastName}` : 'Guest User',
+  displayName: user ? `${user.firstName} ${user.lastName}` : 'Guest User',
+  isVerified: false,
+  location: 'Location not specified',
+  avatar: '/avatars/default.jpg'
+};
 
   // Use API data or fallback to defaults
   const ratingData = vendorStats ? {
