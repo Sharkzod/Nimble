@@ -211,37 +211,37 @@ const getProductColors = (): ColorOption[] => {
           <div className="space-y-4">
             <div className="flex gap-4">
               <div className="flex flex-col gap-3">
-                {product.images.slice(0, 4).map((image, index) => (
-                  <div
-                    key={index}
-                    className={`w-20 h-20 bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-all border-2 ${
-                      currentImageIndex === index ? 'border-blue-500' : 'border-gray-200'
-                    }`}
-                    onClick={() => setCurrentImageIndex(index)}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} - Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/placeholder-product.png';
-                      }}
-                    />
-                  </div>
-                ))}
+                {product.images && product.images.slice(0, 4).map((image, index) => (
+                <div
+                  key={index}
+                  className={`w-20 h-20 bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-all border-2 ${
+                    currentImageIndex === index ? 'border-blue-500' : 'border-gray-200'
+                  }`}
+                  onClick={() => setCurrentImageIndex(index)}
+                >
+                  <img
+                    src={image}
+                    alt={`${product.name} - Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-product.png';
+                    }}
+                  />
+                </div>
+              ))}
               </div>
               
               <div className="flex-1 aspect-square bg-gray-900 rounded-2xl overflow-hidden">
-                <img
-                  src={product.images[currentImageIndex]}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder-product.png';
-                  }}
-                />
+               <img
+                src={product.images && product.images[currentImageIndex] ? product.images[currentImageIndex] : '/placeholder-product.png'}
+                alt={product.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder-product.png';
+                }}
+              />
               </div>
             </div>
           </div>
@@ -447,15 +447,15 @@ const getProductColors = (): ColorOption[] => {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <img
-                src={product.images[currentImageIndex]}
-                alt={`${product.name} - Image ${currentImageIndex + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder-product.png';
-                }}
-              />
+                        <img
+            src={product.images && product.images[currentImageIndex] ? product.images[currentImageIndex] : '/placeholder-product.png'}
+            alt={`${product.name} - Image ${currentImageIndex + 1}`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/placeholder-product.png';
+            }}
+          />
             </div>
             
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
