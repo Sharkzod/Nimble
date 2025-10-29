@@ -58,32 +58,32 @@ const SellRate: React.FC = () => {
   };
 
   useEffect(() => {
-    const loadVendorData = async () => {
-      if (!isAuthenticated || !user) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch vendor statistics
-        const stats = await fetchVendorStats(user.id);
-        setVendorStats(stats);
-      } catch (err: any) {
-        console.error('Error loading vendor data:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Only load if auth is not loading and we have a user
-    if (!authLoading) {
-      loadVendorData();
+  const loadVendorData = async () => {
+    if (!isAuthenticated || !user || !user.id) { // Add !user.id check
+      setLoading(false);
+      return;
     }
-  }, [user, isAuthenticated, authLoading]);
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch vendor statistics - user.id is now guaranteed to be defined
+      const stats = await fetchVendorStats(user.id);
+      setVendorStats(stats);
+    } catch (err: any) {
+      console.error('Error loading vendor data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Only load if auth is not loading and we have a user
+  if (!authLoading) {
+    loadVendorData();
+  }
+}, [user, isAuthenticated, authLoading]);
 
   const toggleFollow = () => {
     setIsFollowing(!isFollowing);
