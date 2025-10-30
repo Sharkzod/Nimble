@@ -110,7 +110,7 @@ const HeroCategoriesSection: React.FC = () => {
   );
 
   return (
-    <div className="w-[90%] flex flex-col justify-center mx-auto">
+    <div className="w-[100%] flex flex-col justify-center mx-auto">
       {/* Hero Banner - Hidden on small screens */}
       <div className="hidden sm:block relative rounded-2xl mx-4 mt-4 overflow-hidden">
         <div className="relative w-full h-[120px] sm:h-[300px]">
@@ -143,7 +143,7 @@ const HeroCategoriesSection: React.FC = () => {
               placeholder="Search categories..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full placeholder-gray-500 bg-gray-100 px-4 py-3 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full placeholder-gray-500 bg-gray-100 px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

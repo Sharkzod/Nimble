@@ -142,7 +142,7 @@ const MostViewedSection: React.FC = () => {
                     e.stopPropagation();
                     toggleWishlist(product.id);
                   }}
-                  className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-10"
+                  className="absolute right-0 p-0.7 sm:p-1.5 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
                 >
                   <Heart
                     className={`w-4 h-4 ${

@@ -207,7 +207,7 @@ const transformProduct = (product: any): TransformedProduct => {
                 {/* Product Info */}
                 <div className="p-3">
                   {/* Rating */} 
-                  <div className='relative flex'>
+                  <div className='relative flex w-full justify-between'>
                   <div className="flex items-center gap-1 mb-1">
                     {renderStars(product.rating, product.maxRating)}
                     <span className="text-xs text-gray-500 ml-1">
@@ -221,7 +221,7 @@ const transformProduct = (product: any): TransformedProduct => {
                       handleWishlistToggle(product.id, product.isWishlisted);
                     }}
                     disabled={wishlistLoading}
-                    className="absolute top-2 right-2 p-1.5 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
+                    className="absolute right-0 p-0.7 sm:p-1.5 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
                   >
                     <Heart
                       className={`w-3.5 h-3.5 ${
