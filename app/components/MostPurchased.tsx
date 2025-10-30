@@ -37,21 +37,27 @@ const MostPurchasedSection: React.FC = () => {
   const { toggleWishlist, loading: wishlistLoading } = useWishlist();
 
   // Transform backend data to frontend format - use 'any' or a more flexible type
-  const transformProduct = (product: any): TransformedProduct => {
-    // Handle different vendor object formats safely
-    const vendorInfo = typeof product.vendor === 'object' ? product.vendor : {};
+    const transformProduct = (product: BackendProduct): TransformedProduct => {
+    // Extract location from product's location object
+    const locationStr = product.location 
+      ? `${product.location.city || ''}${product.location.city && product.location.state ? ', ' : ''}${product.location.state || ''}`
+      : 'Location not specified';
+    
+    // Handle vendor - API returns just {_id: "..."}, so we'll need to fetch vendor details separately
+    // or show a generic label
+    const vendorDisplay = product.vendor?.businessName || product.vendor?.name || 'Vendor';
     
     return {
       id: product._id || product.id,
       name: product.name || 'Unnamed Product',
       price: product.price || 0,
       originalPrice: product.originalPrice,
-      rating: product.rating || 4, // Default rating if not provided
+      rating: Math.round(product.averageRating || 0), // Use averageRating from API
       maxRating: 5,
       image: product.images?.[0] || product.image || '/placeholder-image.jpg',
-      location: vendorInfo?.location || 'Location not specified',
-      isWishlisted: false, // You might want to fetch this separately
-      vendor: vendorInfo?.businessName || vendorInfo?.name || 'Unknown Vendor'
+      location: locationStr.trim() || 'Location not specified',
+      isWishlisted: false, // You might want to fetch this from a separate wishlist endpoint
+      vendor: vendorDisplay
     };
   };
 
@@ -106,16 +112,16 @@ const MostPurchasedSection: React.FC = () => {
     refetch();
   };
 
-  // Loading skeleton
+  // Loading skeleton - updated for 2-column grid
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {Array.from({ length: 8 }).map((_, index) => (
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 6 }).map((_, index) => (
         <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse">
           <div className="aspect-square bg-gray-200"></div>
-          <div className="p-4 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div className="p-3 space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
           </div>
         </div>
       ))}
@@ -152,12 +158,12 @@ const MostPurchasedSection: React.FC = () => {
         )}
       </div>
 
-      {/* Products Grid */}
+      {/* Products Grid - Updated to 2 columns */}
       {loading && transformedProducts.length === 0 ? (
         renderSkeleton()
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {transformedProducts.map((product) => (
               <Link
                 key={product.id}
@@ -177,6 +183,35 @@ const MostPurchasedSection: React.FC = () => {
                   />
                   
                   {/* Wishlist Button */}
+                  {/* <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleWishlistToggle(product.id, product.isWishlisted);
+                    }}
+                    disabled={wishlistLoading}
+                    className="absolute top-2 right-2 p-1.5 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
+                  >
+                    <Heart
+                      className={`w-3.5 h-3.5 ${
+                        product.isWishlisted
+                          ? 'fill-red-500 text-red-500'
+                          : 'text-gray-600 hover:text-red-500'
+                      }`}
+                    />
+                  </button> */}
+                </div>
+
+                {/* Product Info */}
+                <div className="p-3">
+                  {/* Rating */} 
+                  <div className='relative flex'>
+                  <div className="flex items-center gap-1 mb-1">
+                    {renderStars(product.rating, product.maxRating)}
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({product.rating})
+                    </span>
+                  </div>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -184,62 +219,55 @@ const MostPurchasedSection: React.FC = () => {
                       handleWishlistToggle(product.id, product.isWishlisted);
                     }}
                     disabled={wishlistLoading}
-                    className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
+                    className="absolute top-2 right-2 p-1.5 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
                   >
                     <Heart
-                      className={`w-4 h-4 ${
+                      className={`w-3.5 h-3.5 ${
                         product.isWishlisted
                           ? 'fill-red-500 text-red-500'
                           : 'text-gray-600 hover:text-red-500'
                       }`}
                     />
                   </button>
-                </div>
-
-                {/* Product Info */}
-                <div className="p-4">
-                  {/* Rating */}
-                  <div className="flex items-center gap-1 mb-2">
-                    {renderStars(product.rating, product.maxRating)}
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({product.rating})
-                    </span>
                   </div>
 
                   {/* Product Name */}
-                  <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                  <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2 leading-tight">
                     {product.name}
                   </h3>
 
                   {/* Vendor */}
-                  <p className="text-xs text-gray-600 mb-2">
+                  <p className="text-xs text-gray-600 mb-1 line-clamp-1">
                     By {product.vendor}
                   </p>
 
                   {/* Price */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold text-gray-900">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base font-bold text-gray-900">
                       {formatPrice(product.price)}
                     </span>
                     {product.originalPrice && product.originalPrice > product.price && (
-                      <span className="text-sm text-gray-500 line-through">
+                      <span className="text-xs text-gray-500 line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
                     )}
                   </div>
+                  
 
                   {/* Location */}
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 line-clamp-1">
                     {product.location}
                   </p>
+                  
                 </div>
+                
               </Link>
             ))}
           </div>
 
           {/* Load More Button */}
           {pagination?.hasNext && (
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-6">
               <button
                 onClick={loadMore}
                 disabled={loading}

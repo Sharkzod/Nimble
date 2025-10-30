@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Star } from 'lucide-react';
-import Link from 'next/link'; // Add this import
+import Link from 'next/link';
 import { useFetchMostViewed } from '../lib/hooks/useProductApis/useFetchMostViewed';
 import { Product } from '../lib/api/productsApi';
 
@@ -49,23 +49,21 @@ const MostViewedSection: React.FC = () => {
     ));
   };
 
-  // Remove the handleProductClick function since we'll use Link instead
-
-  // Loading state
+  // Loading state - Updated skeleton for 2-column grid on mobile
   if (loading) {
     return (
-      <div className="w-full max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Most viewed</h2>
+      <div className="w-full max-w-6xl mx-auto px-3 py-6 sm:px-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Most viewed</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse">
+            <div key={index} className="bg-white rounded-xl overflow-hidden animate-pulse">
               <div className="aspect-square bg-gray-200"></div>
-              <div className="p-4 space-y-2">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              <div className="p-3 sm:p-4 space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
               </div>
             </div>
           ))}
@@ -77,15 +75,15 @@ const MostViewedSection: React.FC = () => {
   // Error state
   if (error) {
     return (
-      <div className="w-full max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Most viewed</h2>
+      <div className="w-full max-w-6xl mx-auto px-3 py-6 sm:px-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Most viewed</h2>
         </div>
         <div className="text-center py-8">
           <p className="text-red-500 mb-4">Error loading products: {error}</p>
           <button
             onClick={refetch}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
           </button>
@@ -97,23 +95,23 @@ const MostViewedSection: React.FC = () => {
   console.log('Rendering products:', localProducts);
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-8">
+    <div className="w-full max-w-6xl mx-auto px-3 py-6 sm:px-4 sm:py-8">
       {/* Section Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Most viewed</h2>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Most viewed</h2>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Products Grid - 2 columns on mobile, 4 on large screens */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {localProducts.length > 0 ? (
           localProducts.map((product) => (
             <Link
               key={product.id}
-              href={`/product/${product.id}`} // This will redirect to the product page
-              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group block" // Added 'block' class
+              href={`/product/${product.id}`}
+              className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer group block"
             >
               {/* Product Image */}
-              <div className="relative aspect-square bg-gray-100">
+              <div className="relative aspect-square bg-gray-100 overflow-hidden">
                 <img
                   src={product.image}
                   alt={product.name}
@@ -125,13 +123,26 @@ const MostViewedSection: React.FC = () => {
                 />
                 
                 {/* Wishlist Button */}
-                <button
+                
+              </div>
+
+              {/* Product Info */}
+              <div className="p-3 sm:p-4">
+                {/* Rating */}
+                 <div className='relative flex'>
+                                  <div className="flex items-center gap-1 mb-1">
+                                    {renderStars(product.rating, product.maxRating)}
+                                    <span className="text-xs text-gray-500 ml-1">
+                                      ({product.rating})
+                                    </span>
+                                  </div>
+                                  <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     toggleWishlist(product.id);
                   }}
-                  className="absolute top-3 right-3 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200"
+                  className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-10"
                 >
                   <Heart
                     className={`w-4 h-4 ${
@@ -143,53 +154,36 @@ const MostViewedSection: React.FC = () => {
                 </button>
               </div>
 
-              {/* Product Info */}
-              <div className="p-4">
-                {/* Rating */}
-                <div className="flex items-center gap-1 mb-2">
-                  {renderStars(product.rating, product.maxRating)}
-                  <span className="text-xs text-gray-500 ml-1">
-                    ({product.rating || 0})
-                  </span>
-                </div>
-
                 {/* Product Name */}
-                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1 line-clamp-2 leading-snug min-h-[2.5rem] sm:min-h-[3rem]">
                   {product.name || 'Unnamed Product'}
                 </h3>
 
                 {/* Price */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg font-bold text-gray-900">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-lg sm:text-xl font-bold text-gray-900">
                     {formatPrice(product.price)}
                   </span>
                   {product.originalPrice && product.originalPrice > product.price && (
-                    <span className="text-sm text-gray-500 line-through">
+                    <span className="text-xs sm:text-sm text-gray-400 line-through">
                       {formatPrice(product.originalPrice)}
                     </span>
                   )}
                 </div>
 
                 {/* Location */}
-                <p className="text-xs text-gray-500">
+                <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">
                   {product.location || 'Location not available'}
                 </p>
-
-                {/* Additional info for debugging */}
-                {product.views !== undefined && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Views: {product.views}
-                  </p>
-                )}
               </div>
             </Link>
           ))
         ) : (
-          <div className="col-span-full text-center py-8">
-            <p className="text-gray-500">No products found.</p>
+          <div className="col-span-full text-center py-12">
+            <p className="text-gray-500 mb-4">No products found.</p>
             <button
               onClick={refetch}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Refresh
             </button>
