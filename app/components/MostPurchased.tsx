@@ -20,6 +20,8 @@ interface TransformedProduct {
   vendor: string;
 }
 
+
+
 const MostPurchasedSection: React.FC = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
@@ -37,29 +39,29 @@ const MostPurchasedSection: React.FC = () => {
   const { toggleWishlist, loading: wishlistLoading } = useWishlist();
 
   // Transform backend data to frontend format - use 'any' or a more flexible type
-    const transformProduct = (product: BackendProduct): TransformedProduct => {
-    // Extract location from product's location object
-    const locationStr = product.location 
-      ? `${product.location.city || ''}${product.location.city && product.location.state ? ', ' : ''}${product.location.state || ''}`
-      : 'Location not specified';
-    
-    // Handle vendor - API returns just {_id: "..."}, so we'll need to fetch vendor details separately
-    // or show a generic label
-    const vendorDisplay = product.vendor?.businessName || product.vendor?.name || 'Vendor';
-    
-    return {
-      id: product._id || product.id,
-      name: product.name || 'Unnamed Product',
-      price: product.price || 0,
-      originalPrice: product.originalPrice,
-      rating: Math.round(product.averageRating || 0), // Use averageRating from API
-      maxRating: 5,
-      image: product.images?.[0] || product.image || '/placeholder-image.jpg',
-      location: locationStr.trim() || 'Location not specified',
-      isWishlisted: false, // You might want to fetch this from a separate wishlist endpoint
-      vendor: vendorDisplay
-    };
+const transformProduct = (product: any): TransformedProduct => {
+  // Extract location from product's location object
+  const locationStr = product.location 
+    ? `${product.location.city || ''}${product.location.city && product.location.state ? ', ' : ''}${product.location.state || ''}`
+    : 'Location not specified';
+  
+  // Handle vendor - API returns just {_id: "..."}, so we'll need to fetch vendor details separately
+  // or show a generic label
+  const vendorDisplay = product.vendor?.businessName || product.vendor?.name || 'Vendor';
+  
+  return {
+    id: product._id || product.id,
+    name: product.name || 'Unnamed Product',
+    price: product.price || 0,
+    originalPrice: product.originalPrice,
+    rating: Math.round(product.averageRating || 0), // Use averageRating from API
+    maxRating: 5,
+    image: product.images?.[0] || product.image || '/placeholder-image.jpg',
+    location: locationStr.trim() || 'Location not specified',
+    isWishlisted: false, // You might want to fetch this from a separate wishlist endpoint
+    vendor: vendorDisplay
   };
+};
 
   const [transformedProducts, setTransformedProducts] = useState<TransformedProduct[]>([]);
 
