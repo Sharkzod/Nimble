@@ -10,6 +10,7 @@ import Footer from '@/app/components/Footer'
 import { useFetchProduct } from '../../lib/hooks/useProductApis/useFetchProduct'
 import { useWishlist } from '../../lib/hooks/useProductApis/useWishlist'
 import BottomNavigation from '@/app/components/BottomNav'
+import MobileProductHeader from '@/app/components/MobileProductHeader'
 // import { Product } from '@/app/lib/api/productsApi'
 
 interface Product {
@@ -435,157 +436,248 @@ const getProductColors = (): ColorOption[] => {
   };
 
   // Mobile Product Detail Section
-  const MobileProductDetail = () => {
-    if (loading || !product) {
-      return (
-        <div className="lg:hidden w-[90%] mx-auto py-4 animate-pulse">
-          <div className="space-y-4">
-            <div className="aspect-square bg-gray-200 rounded-lg"></div>
-            <div className="space-y-2">
-              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      );
+  // Mobile Product Detail Component
+// Mobile Product Detail Component - Fixed Version
+const MobileProductDetail = () => {
+  // Local state for touch handling
+  const [localTouchStart, setLocalTouchStart] = useState<number>(0);
+  const [localTouchEnd, setLocalTouchEnd] = useState<number>(0);
+
+  // Touch handlers
+  const handleLocalTouchStart = (e: React.TouchEvent) => {
+    setLocalTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleLocalTouchMove = (e: React.TouchEvent) => {
+    setLocalTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleLocalTouchEnd = () => {
+    if (!localTouchStart || !localTouchEnd) return;
+    
+    const distance = localTouchStart - localTouchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      // Swipe left - next image
+      if (product && product.images && product.images.length > 0) {
+        setCurrentImageIndex((prev) => 
+          prev === product.images!.length - 1 ? 0 : prev + 1
+        );
+      }
+    } else if (isRightSwipe) {
+      // Swipe right - previous image
+      if (product && product.images && product.images.length > 0) {
+        setCurrentImageIndex((prev) => 
+          prev === 0 ? product.images!.length - 1 : prev - 1
+        );
+      }
     }
 
+    // Reset touch positions
+    setLocalTouchStart(0);
+    setLocalTouchEnd(0);
+  };
+
+  if (loading || !product) {
     return (
-      <div className="lg:hidden w-[90%] mx-auto py-4">
-        <div className="space-y-6">
-          
-
-          <div className="relative">
-            <div 
-              className="aspect-square bg-gray-100 rounded-lg overflow-hidden"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-                        <img
-            src={product.images && product.images[currentImageIndex] ? product.images[currentImageIndex] : '/placeholder-product.png'}
-            alt={`${product.name} - Image ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/placeholder-product.png';
-            }}
-          />
-            </div>
-            
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-              {currentImageIndex + 1} / {(product.images && product.images.length) || 0}
-            </div>
-          </div>
-           <div className="flex justify-between items-center">
-            <div className="flex items-center text-gray-600">
-              <MapPin className="w-4 h-4 mr-1" />
-              <span className="text-sm">{getVendorLocation(product.vendor)}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              {renderStars(product.rating)}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center text-black text-2xl font-semilight">
-               
-                <span className="text-xl">{product.name}</span>
-              </div>
-
-             <div className="flex items-center text-2xl font-semilight text-[#0DBA37] bg-[#E6FFCF] px-[10px] rounded-[100px]">
-               
-                <span className="text-xl">{product.status}</span>
-              </div>
-              
-            </div>
-            <div className="text-2xl font-bold text-gray-900">
-                {formatPrice(product.price)}
-              </div>
-
-            <div className="flex gap-3">
-              <button className="flex-1 bg-white text-[#3652AD] border-2 border-[#3652AD] py-3 px-4 rounded-[100px] cursor-pointer transition-colors font-medium text-sm">
-                Message seller
-              </button>
-              <button className="flex-1 bg-[#3652AD] text-white py-3 px-4 rounded-[100px] transition-colors font-medium text-sm">
-                Make an offer
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {product.bulkPrices && product.bulkPrices.length > 0 && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Bulk price</h3>
-                  <div className="space-y-1">
-                    {product.bulkPrices.map((bulk: { quantity: number; price: number }, index: number) => (
-                      <div key={index} className="flex justify-between text-gray-700 text-sm">
-                        <span>From {bulk.quantity} pieces</span>
-                        <span className="font-semibold">{formatPrice(bulk.price)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="border-t border-gray-200 pt-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  {product.type && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Type</h4>
-                      <p className="text-gray-600">{product.type}</p>
-                    </div>
-                  )}
-                  {product.color && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Color</h4>
-                      <p className="text-gray-600">{product.color}</p>
-                    </div>
-                  )}
-                  {product.condition && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Condition</h4>
-                      <p className="text-gray-600">{product.condition}</p>
-                    </div>
-                  )}
-                  {product.gender && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">Gender</h4>
-                      <p className="text-gray-600">{product.gender}</p>
-                    </div>
-                  )}
-                </div>
-                
-                {product.sizes && product.sizes.length > 0 && (
-                  <div className="mt-3">
-                    <h4 className="font-semibold text-gray-900 mb-2">Size</h4>
-                    <div className="flex gap-2">
-                      {product.sizes.map((size, index) => (
-                        <span 
-                          key={index}
-                          className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-colors"
-                        >
-                          {size}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-0 sm:p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  {product.description || 'No description available'}
-                </p>
-              </div>
-            </div>
+      <div className="lg:hidden w-full animate-pulse">
+        <div className="space-y-4">
+          <div className="aspect-square bg-gray-200"></div>
+          <div className="px-4 space-y-2">
+            <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
           </div>
         </div>
       </div>
     );
-  };
+  }
 
+  return (
+    <div className="lg:hidden w-full">
+      <div className="space-y-0">
+        {/* Image Gallery */}
+        <div className="relative">
+          <div 
+            className="aspect-square bg-gray-100 select-none"
+            onTouchStart={handleLocalTouchStart}
+            onTouchMove={handleLocalTouchMove}
+            onTouchEnd={handleLocalTouchEnd}
+          >
+            <img
+              src={product.images && product.images[currentImageIndex] ? product.images[currentImageIndex] : '/placeholder-product.png'}
+              alt={`${product.name} - Image ${currentImageIndex + 1}`}
+              className="w-full h-full object-cover pointer-events-none"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder-product.png';
+              }}
+              draggable={false}
+            />
+          </div>
+          
+          {/* Image Counter Badge */}
+          <div className="absolute top-4 right-4 bg-white bg-opacity-90 text-gray-800 px-2 py-1 rounded text-xs font-medium">
+            {currentImageIndex + 1}/{(product.images && product.images.length) || 0}
+          </div>
+
+          {/* Wishlist Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleWishlistToggle(product._id, product.isWishlisted || false);
+            }}
+            disabled={wishlistLoading}
+            className="absolute bottom-4 right-4 p-2.5 bg-white rounded-full shadow-md disabled:opacity-50"
+          >
+            <Heart
+              className={`w-5 h-5 ${
+                product.isWishlisted
+                  ? 'fill-red-500 text-red-500'
+                  : 'text-gray-600'
+              }`}
+            />
+            <span className="absolute -top-1 -right-1 bg-white text-gray-800 text-xs px-1.5 py-0.5 rounded-full">
+              26
+            </span>
+          </button>
+
+          {/* Navigation Dots */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5">
+              {product.images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    index === currentImageIndex 
+                      ? 'bg-white w-4' 
+                      : 'bg-white bg-opacity-50'
+                  }`}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Product Details */}
+        <div className="px-4 py-3 space-y-3">
+          {/* Location and Promoted */}
+          <div className="flex justify-between items-start">
+            <div className="flex items-center text-gray-600">
+              <MapPin className="w-4 h-4 mr-1" />
+              <span className="text-sm">{getVendorLocation(product.location.state)}</span>
+            </div>
+            <span className="text-xs text-gray-500">Promoted</span>
+          </div>
+
+          {/* Product Name */}
+          <h1 className="text-xl font-semibold text-gray-900 leading-snug">
+            {product.name}
+          </h1>
+
+          {/* Price */}
+          <div className="text-3xl font-bold text-gray-900">
+            {formatPrice(product.price)}
+          </div>
+
+          {/* Star Rating */}
+          <div className="flex items-center gap-1">
+            {renderStars(product.rating)}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button className="flex-1 bg-white text-[#3652AD] border border-[#3652AD] py-3.5 px-4 rounded-[100px] font-medium text-sm hover:bg-blue-50 transition-colors">
+              Message seller
+            </button>
+            <button className="flex-1 bg-[#3652AD] text-white py-3.5 px-4 rounded-[100px] font-medium text-sm hover:bg-blue-700 transition-colors">
+              Buy now
+            </button>
+          </div>
+
+          {/* Additional Information */}
+          <div className="space-y-4 pt-2">
+            {/* Bulk Pricing */}
+            {/* {product.bulkPrices && product.bulkPrices.length > 0 && (
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="font-semibold text-gray-900 mb-3 text-base">Bulk price</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {product.bulkPrices.map((bulk: { quantity: number; price: number }, index: number) => (
+                    <div key={index} className="space-y-1">
+                      <div className="text-2xl font-bold text-gray-900">{formatPrice(bulk.price)}</div>
+                      <div className="text-sm text-gray-600">From {bulk.quantity} pieces</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )} */}
+
+            {/* Specifications */}
+            <div className="border-t border-gray-200 pt-4">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                {product.type && (
+                  <div>
+                    <h4 className="text-sm text-gray-600 mb-1">Type</h4>
+                    <p className="text-base font-medium text-gray-900">{product.type}</p>
+                  </div>
+                )}
+                {product.gender && (
+                  <div>
+                    <h4 className="text-sm text-gray-600 mb-1">Gender</h4>
+                    <p className="text-base font-medium text-gray-900">{product.gender}</p>
+                  </div>
+                )}
+                {product.color && (
+                  <div>
+                    <h4 className="text-sm text-gray-600 mb-1">Color</h4>
+                    <p className="text-base font-medium text-gray-900">{product.color}</p>
+                  </div>
+                )}
+                {product.sizes && product.sizes.length > 0 && (
+                  <div>
+                    <h4 className="text-sm text-gray-600 mb-1">Size</h4>
+                    <p className="text-base font-medium text-gray-900">{product.sizes.join(', ')}</p>
+                  </div>
+                )}
+                {product.condition && (
+                  <div>
+                    <h4 className="text-sm text-gray-600 mb-1">Condition</h4>
+                    <p className="text-base font-medium text-gray-900">{product.condition}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Description */}
+            <div className="border-t border-gray-200 pt-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Description</h2>
+              <p className="text-gray-700 leading-relaxed text-sm">
+                {product.description || 'No description available'}
+              </p>
+            </div>
+
+            {/* Vendor Information */}
+            {product.vendor && typeof product.vendor === 'object' && (
+              <div className="border-t border-gray-200 pt-4 pb-2">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Seller Address</h2>
+                <div className="flex items-start">
+                  <MapPin className="w-5 h-5 text-gray-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900">{product.vendor.businessName}</p>
+                    <p className="text-sm text-gray-600 mt-1">{product.vendor.location || 'Location not specified'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
   // Render product card component
 // Render product card component
 const ProductCard = ({ product }: { product: Product }) => (
@@ -685,7 +777,7 @@ const ProductCard = ({ product }: { product: Product }) => (
       <div className="hidden md:block">
         <Header />
       </div>
-
+{/* 
       <div className='bg-white shadow-sm w-full'>
         <div className=' flex space-x-2'>
 <button
@@ -701,7 +793,9 @@ const ProductCard = ({ product }: { product: Product }) => (
     {product ? product.name : 'Loading...'}
   </h1>
   </div>
-</div>
+</div> */}
+
+    <MobileProductHeader/>
       
       <DesktopProductDetail />
       <MobileProductDetail />
