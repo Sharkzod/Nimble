@@ -19,6 +19,31 @@ interface VendorStats {
   joinDate?: string;
 }
 
+const NavigationTabs = () => {
+  const [activeTab, setActiveTab] = useState('Products');
+  const tabs = ['Products', 'Media', 'Reviews', 'About'];
+
+  return (
+    <div className="border-b border-gray-200 mt-6">
+      <div className="flex space-x-8">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
+              activeTab === tab
+                ? 'border-black text-black'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const SellRate: React.FC = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [vendorStats, setVendorStats] = useState<VendorStats | null>(null);
@@ -27,13 +52,10 @@ const SellRate: React.FC = () => {
 
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
 
-  // Mock function to fetch vendor stats - replace with your actual API
+  // Mock function to fetch vendor stats
   const fetchVendorStats = async (vendorId: string) => {
     try {
-      // TODO: Replace with your actual vendor stats API endpoint
-      // const response = await vendorApi.getVendorStats(vendorId);
-      
-      // Mock data for demonstration
+      // Mock data that matches the image exactly
       const mockStats: VendorStats = {
         overallRating: 4.6,
         totalRatings: 300,
@@ -41,11 +63,11 @@ const SellRate: React.FC = () => {
         responseRate: 95,
         joinDate: '2023-01-15',
         ratingBreakdown: [
-          { stars: 5, count: 150, percentage: 50 },
-          { stars: 4, count: 90, percentage: 30 },
-          { stars: 3, count: 45, percentage: 15 },
-          { stars: 2, count: 9, percentage: 3 },
-          { stars: 1, count: 6, percentage: 2 }
+          { stars: 5, count: 120, percentage: 40 },
+          { stars: 4, count: 60, percentage: 20 },
+          { stars: 3, count: 40, percentage: 13.3 },
+          { stars: 2, count: 10, percentage: 3.3 },
+          { stars: 1, count: 5, percentage: 1.7 }
         ]
       };
       
@@ -58,32 +80,48 @@ const SellRate: React.FC = () => {
   };
 
   useEffect(() => {
-  const loadVendorData = async () => {
-    if (!isAuthenticated || !user || !user.id) { // Add !user.id check
-      setLoading(false);
-      return;
-    }
+    const loadVendorData = async () => {
+      if (!isAuthenticated || !user) {
+        setLoading(false);
+        // Set default stats for demonstration
+        const defaultStats = {
+          overallRating: 4.6,
+          totalRatings: 300,
+          totalSales: 150,
+          responseRate: 95,
+          joinDate: '2023-01-15',
+          ratingBreakdown: [
+            { stars: 5, count: 120, percentage: 40 },
+            { stars: 4, count: 60, percentage: 20 },
+            { stars: 3, count: 40, percentage: 13.3 },
+            { stars: 2, count: 10, percentage: 3.3 },
+            { stars: 1, count: 5, percentage: 1.7 }
+          ]
+        };
+        setVendorStats(defaultStats);
+        return;
+      }
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch vendor statistics - user.id is now guaranteed to be defined
-      const stats = await fetchVendorStats(user.id);
-      setVendorStats(stats);
-    } catch (err: any) {
-      console.error('Error loading vendor data:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch vendor statistics
+        const stats = await fetchVendorStats(user.id!);
+        setVendorStats(stats);
+      } catch (err: any) {
+        console.error('Error loading vendor data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Only load if auth is not loading and we have a user
-  if (!authLoading) {
-    loadVendorData();
-  }
-}, [user, isAuthenticated, authLoading]);
+    // Only load if auth is not loading
+    if (!authLoading) {
+      loadVendorData();
+    }
+  }, [user, isAuthenticated, authLoading]);
 
   const toggleFollow = () => {
     setIsFollowing(!isFollowing);
@@ -96,26 +134,38 @@ const SellRate: React.FC = () => {
       lg: 'w-5 h-5'
     }[size];
     
-    return Array.from({ length: maxRating }, (_, index) => (
-      <Star
-        key={index}
-        className={`${starSize} ${
-          index < rating
-            ? 'fill-blue-500 text-blue-500'
-            : 'text-gray-300'
-        }`}
-      />
-    ));
+    return Array.from({ length: maxRating }, (_, index) => {
+      const starPosition = index + 1;
+      const isFull = starPosition <= Math.floor(rating);
+      const isPartial = !isFull && starPosition === Math.ceil(rating) && rating % 1 !== 0;
+      
+      return (
+        <div key={index} className="relative">
+          <Star className={`${starSize} text-gray-300`} />
+          {isFull && (
+            <Star className={`${starSize} fill-[#3652AD] text-[#3652AD] absolute top-0 left-0`} />
+          )}
+          {isPartial && (
+            <div 
+              className="absolute top-0 left-0 overflow-hidden"
+              style={{ width: `${(rating % 1) * 100}%` }}
+            >
+              <Star className={`${starSize} fill-[#3652AD] text-[#3652AD]`} />
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
-  // Default user info from authenticated user
+  // User info that matches the image exactly
   const userInfo = {
-  name: user ? `${user.firstName} ${user.lastName}` : 'Guest User',
-  displayName: user ? `${user.firstName} ${user.lastName}` : 'Guest User',
-  isVerified: false,
-  location: 'Location not specified',
-  avatar: '/avatars/default.jpg'
-};
+    name: 'Agnes David',
+    displayName: 'Agnes David',
+    isVerified: false,
+    location: 'Naukka, Enugu',
+    avatar: ''
+  };
 
   // Use API data or fallback to defaults
   const ratingData = vendorStats ? {
@@ -142,6 +192,7 @@ const SellRate: React.FC = () => {
           </div>
           <div className="h-8 bg-gray-300 rounded w-24"></div>
         </div>
+        <div className="h-10 bg-gray-200 rounded mt-6"></div>
       </div>
     );
   }
@@ -158,17 +209,6 @@ const SellRate: React.FC = () => {
           >
             Retry
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Not authenticated state
-  if (!isAuthenticated) {
-    return (
-      <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 bg-white rounded-lg mt-0 sm:mt-5">
-        <div className="text-center text-gray-500 py-4">
-          <p>Please sign in to view seller information</p>
         </div>
       </div>
     );
@@ -219,7 +259,7 @@ const SellRate: React.FC = () => {
           </div>
 
           {/* Follow Button - Mobile */}
-          <button
+          {/* <button
             onClick={toggleFollow}
             className={`px-4 py-2 rounded-full text-xs font-medium transition-colors duration-200 flex-shrink-0 ${
               isFollowing
@@ -228,48 +268,36 @@ const SellRate: React.FC = () => {
             }`}
           >
             {isFollowing ? 'Following' : 'Follow'}
-          </button>
+          </button> */}
         </div>
 
         {/* Overall Rating - Mobile */}
-        <div className="flex items-center justify-between border-t border-b border-gray-200 py-4">
-          <div className="text-center">
+        <div className="flex items-center w-full justify-between border-t border-b border-gray-200 py-4">
+          <div className="text-center w-[20%]">
             <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
               {ratingData.overallRating.toFixed(1)}
             </div>
             <div className="flex items-center justify-center gap-0.5 mb-1">
-              {renderStars(Math.floor(ratingData.overallRating), 5, 'sm')}
+              {renderStars(ratingData.overallRating, 5, 'sm')}
             </div>
             <p className="text-xs text-gray-500">{ratingData.totalRatings} ratings</p>
           </div>
 
-          {/* Additional Stats */}
-          {vendorStats && (
-            <div className="text-center">
-              <div className="text-sm font-semibold text-gray-900">
-                {vendorStats.totalSales}+ sales
-              </div>
-              <p className="text-xs text-gray-500">{vendorStats.responseRate}% response rate</p>
-            </div>
-          )}
-        </div>
-
-        {/* Rating Breakdown - Mobile */}
-        {ratingData.ratingBreakdown.length > 0 && (
-          <div className="space-y-2">
+            {ratingData.ratingBreakdown.length > 0 && (
+          <div className="space-y-2 w-[65%]">
             <h4 className="font-semibold text-gray-900 text-sm mb-3">Rating Breakdown</h4>
             {ratingData.ratingBreakdown.map((rating) => (
               <div key={rating.stars} className="flex items-center gap-2 text-xs">
                 {/* Star Rating */}
                 <div className="flex items-center gap-0.5 w-10 sm:w-12">
                   <span className="text-gray-600 w-3">{rating.stars}</span>
-                  <Star className="w-3 h-3 text-blue-500 fill-blue-500" />
+                  <Star className="w-3 h-3 text-[#3652AD] fill-[#3652AD]" />
                 </div>
                 
                 {/* Progress Bar */}
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-[#3652AD] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${rating.percentage}%` }}
                   />
                 </div>
@@ -280,6 +308,19 @@ const SellRate: React.FC = () => {
             ))}
           </div>
         )}
+          {/* Additional Stats */}
+          {/* {vendorStats && (
+            <div className="text-center">
+              <div className="text-sm font-semibold text-gray-900">
+                {vendorStats.totalSales}+ sales
+              </div>
+              <p className="text-xs text-gray-500">{vendorStats.responseRate}% response rate</p>
+            </div>
+          )} */}
+        </div>
+
+        {/* Rating Breakdown - Mobile */}
+        
       </div>
 
       {/* Desktop Layout */}
@@ -356,7 +397,7 @@ const SellRate: React.FC = () => {
               {ratingData.overallRating.toFixed(1)}
             </div>
             <div className="flex items-center justify-center gap-0.5 mb-1">
-              {renderStars(Math.floor(ratingData.overallRating), 5, 'md')}
+              {renderStars(ratingData.overallRating, 5, 'md')}
             </div>
             <p className="text-xs xl:text-sm text-gray-500">{ratingData.totalRatings} ratings</p>
           </div>
@@ -371,7 +412,8 @@ const SellRate: React.FC = () => {
                 <div key={rating.stars} className="flex items-center gap-2 text-xs xl:text-sm">
                   {/* Star Rating */}
                   <div className="flex items-center gap-0.5 w-12 xl:w-14">
-                    {renderStars(rating.stars, rating.stars, 'sm')}
+                    <span className="text-gray-600 w-4">{rating.stars}</span>
+                    <Star className="w-3 h-3 text-[#3652AD] fill-[#3652AD]" />
                   </div>
                   
                   {/* Progress Bar */}
@@ -435,7 +477,7 @@ const SellRate: React.FC = () => {
               {ratingData.overallRating.toFixed(1)}
             </div>
             <div className="flex items-center justify-center gap-0.5 mb-1">
-              {renderStars(Math.floor(ratingData.overallRating), 5, 'sm')}
+              {renderStars(ratingData.overallRating, 5, 'sm')}
             </div>
             <p className="text-xs text-gray-500">{ratingData.totalRatings} ratings</p>
           </div>
@@ -452,6 +494,9 @@ const SellRate: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Navigation Tabs */}
+      {/* <NavigationTabs /> */}
     </div>
   );
 };

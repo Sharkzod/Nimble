@@ -7,6 +7,7 @@ import ProductsGridComponent from '../components/ProductCards';
 import Footer from '../components/Footer';
 import SellRate from '../components/SellRate';
 import BottomNavigation from '../components/BottomNav';
+import SellHeader from '../components/SellHeader';
 
 const HorizontalUserProfile: React.FC = () => {
   return(
@@ -15,7 +16,9 @@ const HorizontalUserProfile: React.FC = () => {
       <div className="hidden md:block">
         <Header />
       </div>
-      
+      <div className="md:hidden block">
+      <SellHeader/>
+      </div>
       {/* Main Content with bottom padding for mobile nav */}
       <main className="pb-20 md:pb-0">
         <SellRate/>

@@ -165,7 +165,7 @@ const transformProduct = (product: any): TransformedProduct => {
         renderSkeleton()
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {transformedProducts.map((product) => (
               <Link
                 key={product.id}
@@ -234,25 +234,25 @@ const transformProduct = (product: any): TransformedProduct => {
                   </div>
 
                   {/* Product Name */}
-                  <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2 leading-tight">
+                  <h3 className="text-[11px] sm:text-sm font-medium text-gray-900 mb-1 line-clamp-2 leading-tight">
                     {product.name}
                   </h3>
 
                   {/* Vendor */}
-                  <p className="text-xs text-gray-600 mb-1 line-clamp-1">
+                  {/* <p className="text-xs text-gray-600 mb-1 line-clamp-1">
                     By {product.vendor}
-                  </p>
+                  </p> */}
 
                   {/* Price */}
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-base font-bold text-gray-900">
+                    <span className="text-[11px] sm:text-base font-bold text-gray-900">
                       {formatPrice(product.price)}
                     </span>
-                    {product.originalPrice && product.originalPrice > product.price && (
+                    {/* {product.originalPrice && product.originalPrice > product.price && (
                       <span className="text-xs text-gray-500 line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
-                    )}
+                    )} */}
                   </div>
                   
 

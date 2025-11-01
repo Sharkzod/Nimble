@@ -155,20 +155,20 @@ const MostViewedSection: React.FC = () => {
               </div>
 
                 {/* Product Name */}
-                <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1 line-clamp-2 leading-snug min-h-[2.5rem] sm:min-h-[3rem]">
+                <h3 className="text-[11px] sm:text-sm font-medium text-gray-900 mb-1 line-clamp-2 leading-snug min-h-[2.5rem] sm:min-h-[3rem]">
                   {product.name || 'Unnamed Product'}
                 </h3>
 
                 {/* Price */}
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-lg sm:text-xl font-bold text-gray-900">
+                  <span className="text-[11px] sm:text-xl font-bold text-gray-900">
                     {formatPrice(product.price)}
                   </span>
-                  {product.originalPrice && product.originalPrice > product.price && (
+                  {/* {product.originalPrice && product.originalPrice > product.price && (
                     <span className="text-xs sm:text-sm text-gray-400 line-through">
                       {formatPrice(product.originalPrice)}
                     </span>
-                  )}
+                  )} */}
                 </div>
 
                 {/* Location */}

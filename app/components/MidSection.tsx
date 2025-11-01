@@ -134,9 +134,9 @@ const HeroCategoriesSection: React.FC = () => {
       </div>
 
       {/* Categories Section - Moved to top on mobile */}
-      <div className="px-4 py-8 sm:py-8">
+      <div className="px-4 py-4 sm:py-8">
         {/* Mobile Search Bar - Always visible, now at the top */}
-        <div className="mb-6 max-w-6xl mx-auto">
+        <div className="mb-6 max-w-6xl mx-auto sm:hidden">
           <div className="relative">
             <input
               type="text"
@@ -169,7 +169,7 @@ const HeroCategoriesSection: React.FC = () => {
         ) : (
           <>
             {/* Mobile - Horizontal Scroll */}
-            <div className="flex md:hidden space-x-4 overflow-x-auto pb-4 hide-scrollbar max-w-6xl mx-auto">
+            <div className="flex md:hidden space-x-4 overflow-x-auto hide-scrollbar max-w-6xl mx-auto">
               {filteredCategories.map((category) => (
                 <Link
                   key={category.id}

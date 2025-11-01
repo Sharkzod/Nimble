@@ -574,12 +574,12 @@ const MobileProductDetail = () => {
           </div>
 
           {/* Product Name */}
-          <h1 className="text-xl font-semibold text-gray-900 leading-snug">
+          <h1 className="text-xl font-semibold text-gray-900 leading-snug text-[18px]">
             {product.name}
           </h1>
 
           {/* Price */}
-          <div className="text-3xl font-bold text-gray-900">
+          <div className="text-3xl font-bold text-gray-900 text-[18px]">
             {formatPrice(product.price)}
           </div>
 

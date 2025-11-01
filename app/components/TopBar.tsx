@@ -112,7 +112,7 @@ const Header: React.FC = () => {
   }
 
   return (
-    <div className="bg-white shadow-sm w-full">
+    <div className="bg-white border-b border-gray-200 w-full">
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
         <div className="lg:hidden fixed inset-0 bg-white z-50 p-4">
@@ -239,7 +239,7 @@ const Header: React.FC = () => {
       {/* Header for Logged In Users */}
       {isAuthenticated && (
         <div className="border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="max-w-6xl mx-auto px-4 py-1 sm:py-4">
             {/* Mobile Layout - Updated Design */}
             <div className="flex items-center justify-between lg:hidden">
               <button onClick={() => handleNavigation('/')} className="flex items-center">
