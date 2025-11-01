@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft
 } from 'lucide-react';
+import BottomNavigation from '@/app/components/BottomNav';
 
 
 // types/transaction.ts
@@ -134,7 +135,7 @@ export default function TransactionsPage() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="bg-white border-t border-gray-200 px-6 py-3 shadow-lg">
+      {/* <nav className="bg-white border-t border-gray-200 px-6 py-3 shadow-lg">
         <div className="flex items-center justify-between max-w-md mx-auto">
           <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-900 transition-colors">
             <Home className="w-5 h-5" />
@@ -161,7 +162,8 @@ export default function TransactionsPage() {
             <span className="text-xs font-medium">Account</span>
           </button>
         </div>
-      </nav>
+      </nav> */}
+      <BottomNavigation/>
     </div>
   );
 }
