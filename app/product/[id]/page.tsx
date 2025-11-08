@@ -42,8 +42,6 @@ interface Product {
   }[];
   colours?: string[];
   status?: string;
-  
-  // ADD THESE MISSING PROPERTIES:
   shippingOptions?: string[];
   deliveryTimelines?: {
     _id: string;
@@ -704,7 +702,7 @@ const MobileProductDetail = () => {
                 </div>
                 
                 {/* Delivery Options */}
-                {product.shippingOptions && product.shippingOptions.length > 0 && (
+                {(product as Product).shippingOptions && (product as Product).shippingOptions.length > 0 && (
                   <div className="mt-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-2">Delivery options</h4>
                     <div className="space-y-2">
