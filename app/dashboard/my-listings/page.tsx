@@ -1,474 +1,568 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/app/components/TopBar';
-import VerticalNavMenu from '@/app/components/SidebarNavigation';
-import Footer from '@/app/components/Footer';
-import MobileTopBar from '@/app/components/MobileTopBar';
-import BottomNavigation from '@/app/components/BottomNav';
-import { useFetchVendorProducts } from '@/app/lib/hooks/useProductApis/useFetchVendorProducts';
-import { useAuthStore } from '@/app/lib/stores/useAuthStore';
+import { ArrowLeft, Settings, Search, MoreVertical, Edit, Eye, Share2, Trash2, Home, FileText, MessageSquare, User, PlusCircle } from 'lucide-react';
 
-type ListingTab = 'active' | 'pending' | 'renew' | 'sold' | 'drafts' | 'unpaid';
+type ListingTab = 'active' | 'pending' | 'renew' | 'closed' | 'drafts' | 'rejected';
 
-const UnifiedListingsComponent: React.FC = () => {
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  status: ListingTab;
+  listedOn: string;
+  expiresOn?: string;
+  reason?: string;
+}
+
+const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Photopulse camera',
+    price: 40000,
+    image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400',
+    status: 'active',
+    listedOn: '4/10/2023'
+  },
+  {
+    id: '2',
+    name: 'Photopulse camera',
+    price: 40000,
+    image: 'https://images.unsplash.com/photo-1606933248010-ef7a8c02e1b8?w=400',
+    status: 'active',
+    listedOn: '4/10/2023'
+  },
+  {
+    id: '3',
+    name: 'Vintage Watch',
+    price: 25000,
+    image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400',
+    status: 'pending',
+    listedOn: '5/10/2023'
+  },
+  {
+    id: '4',
+    name: 'Wireless Headphones',
+    price: 15000,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
+    status: 'renew',
+    listedOn: '1/10/2023',
+    expiresOn: '15/10/2023'
+  },
+  {
+    id: '5',
+    name: 'Gaming Console',
+    price: 120000,
+    image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400',
+    status: 'closed',
+    listedOn: '20/09/2023'
+  },
+  {
+    id: '6',
+    name: 'Smartphone',
+    price: 80000,
+    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
+    status: 'drafts',
+    listedOn: '6/10/2023'
+  },
+  {
+    id: '7',
+    name: 'Designer Bag',
+    price: 95000,
+    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400',
+    status: 'rejected',
+    listedOn: '3/10/2023',
+    reason: 'Inappropriate category'
+  }
+];
+
+const MyListingsPage = () => {
   const [activeTab, setActiveTab] = useState<ListingTab>('active');
-  const [vendorId, setVendorId] = useState<string | null>(null);
-  const router = useRouter();
-  
-  // Use your existing auth store
-  const { user, isLoading: authLoading, isAuthenticated, hasHydrated } = useAuthStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>(mockProducts);
 
-  // Get vendor ID from auth store with proper hydration handling
-useEffect(() => {
-  console.log('🔍 Auth Status:', {
-    hasHydrated,
-    isAuthenticated,
-    user: user ? 'exists' : 'missing',
-    authLoading
-  });
-
-  // If store hasn't hydrated yet, wait
-  if (!hasHydrated) {
-    console.log('⏳ Waiting for auth store hydration...');
-    return;
-  }
-
-  // Store has hydrated, now check authentication
-  if (!isAuthenticated || !user) {
-    console.log('❌ User not authenticated after hydration, redirecting to login...');
-    router.push('/login');
-    return;
-  }
-
-  // Use user.id directly since it's the only property we know exists
-  if (!user.id) {
-    console.error('❌ No user ID found in user object');
-    return;
-  }
-
-  console.log('✅ User authenticated, setting vendor ID:', user.id);
-  setVendorId(user.id);
-}, [user, isAuthenticated, hasHydrated, authLoading, router]);
-
-  const { 
-    data, 
-    loading: productsLoading, 
-    error, 
-    refetch,
-    activeProducts,
-    pendingProducts,
-    draftProducts,
-    soldProducts,
-    renewProducts,
-    unpaidProducts
-  } = useFetchVendorProducts(vendorId);
-
-  const tabs: { id: ListingTab; label: string; count: number }[] = [
-    { id: 'active', label: 'Active', count: activeProducts.length },
-    { id: 'pending', label: 'Pending', count: pendingProducts.length },
-    { id: 'renew', label: 'To renew', count: renewProducts.length },
-    { id: 'sold', label: 'Sold', count: soldProducts.length },
-    { id: 'drafts', label: 'Drafts', count: draftProducts.length },
-    { id: 'unpaid', label: 'To Pay', count: unpaidProducts.length },
+  const tabs: { id: ListingTab; label: string }[] = [
+    { id: 'active', label: 'Active' },
+    { id: 'pending', label: 'Pending' },
+    { id: 'renew', label: 'To renew' },
+    { id: 'closed', label: 'Closed' },
+    { id: 'drafts', label: 'Drafts' },
+    { id: 'rejected', label: 'Rejected' },
   ];
 
-  // Show loading state ONLY while auth store is hydrating or checking auth
-  if (!hasHydrated || authLoading) {
-    return (
-      <div className="w-full flex flex-col min-h-screen">
-        <div className="hidden md:block">
-          <Header/>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">
-              {!hasHydrated ? 'Loading authentication...' : 'Checking user...'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+  const formatPrice = (price: number) => {
+    return `₦${price.toLocaleString()}`;
+  };
+
+  
+  const router = useRouter();
+  const navigateBack = () => {
+    router.push('/dashboard/user');
   }
 
-  // Show message if not authenticated (after hydration)
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="w-full flex flex-col min-h-screen">
-        <div className="hidden md:block">
-          <Header/>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-gray-400 text-6xl mb-4">🔒</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-            <p className="text-gray-600 mb-6">Please log in to view your listings.</p>
+  const toggleMenu = (productId: string) => {
+    setOpenMenuId(openMenuId === productId ? null : productId);
+  };
+
+  const handleMenuAction = (action: string, productId: string) => {
+    console.log(`${action} product:`, productId);
+    
+    switch (action) {
+      case 'edit':
+        // Navigate to edit page or open edit modal
+        console.log('Editing product:', productId);
+        break;
+      case 'view':
+        // Navigate to product detail page
+        console.log('Viewing product:', productId);
+        break;
+      case 'markSold':
+        markAsSold(productId);
+        break;
+      case 'share':
+        shareProduct(productId);
+        break;
+      case 'delete':
+        deleteProduct(productId);
+        break;
+      case 'renew':
+        renewProduct(productId);
+        break;
+      case 'republish':
+        republishProduct(productId);
+        break;
+    }
+    setOpenMenuId(null);
+  };
+
+  const markAsSold = (productId: string) => {
+    setProducts(products.map(product => 
+      product.id === productId 
+        ? { ...product, status: 'Sold' as ListingTab }
+        : product
+    ));
+    console.log('Product marked as sold:', productId);
+  };
+
+  const deleteProduct = (productId: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      setProducts(products.filter(product => product.id !== productId));
+      console.log('Product deleted:', productId);
+    }
+  };
+
+  const shareProduct = async (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product && navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Check out ${product.name} for ${formatPrice(product.price)}`,
+          url: window.location.href,
+        });
+        console.log('Product shared successfully');
+      } catch (error) {
+        console.log('Error sharing product:', error);
+      }
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(window.location.href);
+      alert('Product link copied to clipboard!');
+    }
+  };
+
+  const renewProduct = (productId: string) => {
+    setProducts(products.map(product => 
+      product.id === productId 
+        ? { 
+            ...product, 
+            status: 'active' as ListingTab,
+            listedOn: new Date().toLocaleDateString(),
+            expiresOn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+          }
+        : product
+    ));
+    console.log('Product renewed:', productId);
+  };
+
+  const republishProduct = (productId: string) => {
+    setProducts(products.map(product => 
+      product.id === productId 
+        ? { ...product, status: 'pending' as ListingTab }
+        : product
+    ));
+    console.log('Product republished:', productId);
+  };
+
+  const getStatusColor = (status: ListingTab) => {
+    const colors = {
+      active: 'text-green-600',
+      pending: 'text-yellow-600',
+      renew: 'text-orange-600',
+      closed: 'text-[#0DBA37]',
+      drafts: 'text-[#EF4444]',
+      rejected: 'text-red-600'
+    };
+    return colors[status];
+  };
+
+  const getStatusText = (status: ListingTab) => {
+    const texts = {
+      active: 'Active',
+      pending: 'Pending Review',
+      renew: 'Pending',
+      closed: 'Sold',
+      drafts: 'Draft',
+      rejected: 'Rejected'
+    };
+    return texts[status];
+  };
+
+  const getActionButtons = (product: Product) => {
+    switch (product.status) {
+      case 'active':
+        return (
+          <div className="flex gap-2">
             <button 
-              onClick={() => router.push('/login')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              onClick={() => markAsSold(product.id)}
+              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-[11px] font-medium rounded-full hover:bg-blue-50"
             >
-              Go to Login
+              Mark as sold out
+            </button>
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 bg-[#3652AD] text-white text-[11px] font-medium rounded-full hover:bg-[#3652AD]"
+            >
+              Edit
             </button>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show brief loading while vendorId is being set (after auth is confirmed)
-  if (!vendorId) {
-    return (
-      <div className="w-full flex flex-col min-h-screen">
-        <div className="hidden md:block">
-          <Header/>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your listings...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // MAIN COMPONENT CONTENT - Only renders when user is authenticated and vendorId is set
-  const formatPrice = (price: number) => {
-    return `₦${price?.toLocaleString() || '0'}`;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active':
-      case 'sold':
-        return 'text-[#0DBA37]';
+        );
       case 'pending':
-        return 'text-[#FE7A36]';
-      case 'renew':
-      case 'to renew':
-        return 'text-[#EF4444]';
-      case 'draft':
-      case 'drafts':
-        return 'text-[#6B7280]';
-      case 'unpaid':
-        return 'text-[#EB6F4A]';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
-  const getDisplayStatus = (status: string, tab: ListingTab) => {
-    if (status) return status;
-    
-    // Fallback status based on tab
-    switch (tab) {
-      case 'active': return 'Active';
-      case 'pending': return 'Pending';
-      case 'renew': return 'To renew';
-      case 'sold': return 'Sold';
-      case 'drafts': return 'Draft';
-      case 'unpaid': return 'Unpaid';
-      default: return 'Active';
-    }
-  };
-
-  const getButtonConfig = (tab: ListingTab) => {
-    switch (tab) {
-      case 'active':
-        return { text: 'Reorder item', action: 'reorder' };
-      case 'pending':
-        return { text: 'Edit', action: 'edit' };
-      case 'renew':
-        return { text: 'Renew item', action: 'renew' };
-      case 'sold':
-        return { text: 'Re-list item', action: 'relist' };
-      case 'drafts':
-        return { 
-          primaryText: 'Edit', 
-          primaryAction: 'edit',
-          secondaryText: 'Publish Item',
-          secondaryAction: 'publish'
-        };
-      case 'unpaid':
-        return { text: 'Pay now', action: 'pay' };
-      default:
-        return { text: 'View', action: 'view' };
-    }
-  };
-
-  const handleAction = (action: string, productId: string) => {
-    console.log(`${action} product:`, productId);
-    // Implement your action handlers here
-    switch (action) {
-      case 'reorder':
-        // Handle reorder logic
-        break;
-      case 'edit':
-        // Handle edit logic - navigate to edit page
-        // router.push(`/edit-product/${productId}`);
-        break;
-      case 'renew':
-        // Handle renew logic
-        break;
-      case 'relist':
-        // Handle relist logic
-        break;
-      case 'publish':
-        // Handle publish logic
-        break;
-      case 'pay':
-        // Handle payment logic
-        break;
-      default:
-        break;
-    }
-  };
-
-  const getProductsForTab = (tab: ListingTab) => {
-    switch (tab) {
-      case 'active': return activeProducts;
-      case 'pending': return pendingProducts;
-      case 'renew': return renewProducts;
-      case 'sold': return soldProducts;
-      case 'drafts': return draftProducts;
-      case 'unpaid': return unpaidProducts;
-      default: return [];
-    }
-  };
-
-  const renderListingsGrid = (products: any[]) => {
-    const buttonConfig = getButtonConfig(activeTab);
-
-    if (products.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">📦</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-          <p className="text-gray-600 mb-6">
-            {activeTab === 'active' && "You don't have any active listings."}
-            {activeTab === 'pending' && "You don't have any pending listings."}
-            {activeTab === 'renew' && "You don't have any listings to renew."}
-            {activeTab === 'sold' && "You haven't sold any products yet."}
-            {activeTab === 'drafts' && "You don't have any draft listings."}
-            {activeTab === 'unpaid' && "You don't have any unpaid listings."}
-          </p>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            List Your First Product
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="w-full max-w-4xl mx-auto p-6 bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+        return (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-50"
             >
-              {/* Product Image */}
-              <div className="aspect-video bg-gray-100">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTI1SDE3NVYxNzVIMjI1VjEyNUgxNzVaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';
-                  }}
-                />
-              </div>
-
-              {/* Product Details */}
-              <div className="p-5">
-                {/* Product Name */}
-                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                  {product.name}
-                </h3>
-
-                {/* Price */}
-                <div className="text-sm font-bold text-gray-900 mb-3">
-                  {formatPrice(product.price)}
-                </div>
-
-                {/* Status and Listed Date */}
-                <div className="mb-2 mt-2">
-                  <span className="flex justify-between text-[10px] border-t border-gray-300 py-1 text-black">
-                    Listed on {product.listedOn || 'Unknown date'}
-                    <div className={`text-[10px] ${getStatusColor(product.status || activeTab)}`}>
-                      {getDisplayStatus(product.status || '', activeTab)}
-                    </div>
-                  </span>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  {activeTab === 'drafts' ? (
-                    <>
-                      {/* Edit Button */}
-                      <button
-                        onClick={() => handleAction(buttonConfig.primaryAction!, product.id)}
-                        className="flex-1 py-2.5 px-4 border-2 border-[#3652AD] text-[#3652AD] font-semibold rounded-full transition-colors duration-200 text-[10px]"
-                      >
-                        {buttonConfig.primaryText}
-                      </button>
-
-                      {/* Publish Button */}
-                      <button
-                        onClick={() => handleAction(buttonConfig.secondaryAction!, product.id)}
-                        className="flex-1 py-2.5 px-4 bg-[#3652AD] text-white font-semibold rounded-full text-[10px]"
-                      >
-                        {buttonConfig.secondaryText}
-                      </button>
-                    </>
-                  ) : (
-                    /* Single Button for other tabs */
-                    <button
-                      onClick={() => handleAction(buttonConfig.action!, product.id)}
-                      className="flex-1 py-2.5 px-4 bg-[#3652AD] text-white font-semibold rounded-full text-[10px]"
-                    >
-                      {buttonConfig.text}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+              Edit
+            </button>
+            {/* <button 
+              onClick={() => deleteProduct(product.id)}
+              className="flex-1 py-2 px-4 bg-red-600 text-white text-xs font-medium rounded-full hover:bg-red-700"
+            >
+              Delete
+            </button> */}
+          </div>
+        );
+      case 'renew':
+        return (
+          <div className="flex gap-2">
+            {/* <button 
+              onClick={() => handleMenuAction('renew', product.id)}
+              className="flex-1 py-2 px-4 bg-green-600 text-white text-xs font-medium rounded-full hover:bg-green-700"
+            >
+              Renew Now
+            </button> */}
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-50"
+            >
+              Edit
+            </button>
+          </div>
+        );
+      case 'closed':
+        return (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMenuAction('republish', product.id)}
+              className="flex-1 py-2 px-4 bg-white border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-700"
+            >
+              Edit
+            </button>
+            <button 
+              onClick={() => deleteProduct(product.id)}
+              className="flex-1 py-2 px-4 border bg-[#3652AD] text-white text-xs font-medium rounded-full hover:bg-red-50"
+            >
+              Re-list
+            </button>
+          </div>
+        );
+      case 'drafts':
+        return (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-700"
+            >
+              Edit
+            </button>
+            <button 
+              onClick={() => handleMenuAction('republish', product.id)}
+              className="flex-1 py-2 px-4 border bg-[#3652AD] text-xs font-medium rounded-full hover:bg-green-50"
+            >
+              Publish
+            </button>
+          </div>
+        );
+      case 'rejected':
+        return (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 bg-blue-600 text-white text-xs font-medium rounded-full hover:bg-blue-700"
+            >
+              Edit & Resubmit
+            </button>
+            <button 
+              onClick={() => deleteProduct(product.id)}
+              className="flex-1 py-2 px-4 border border-red-600 text-red-600 text-xs font-medium rounded-full hover:bg-red-50"
+            >
+              Delete
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
-  const renderTabContent = () => {
-    const currentProducts = getProductsForTab(activeTab);
+  const getMenuItems = (product: Product) => {
+    const baseItems = [
+      { icon: <Edit className="w-4 h-4" />, label: 'Edit', action: 'edit' },
+      { icon: <Eye className="w-4 h-4" />, label: 'View', action: 'view' },
+      { icon: <Share2 className="w-4 h-4" />, label: 'Share', action: 'share' },
+    ];
 
-    if (productsLoading) {
-      return (
-        <div className="w-full max-w-4xl mx-auto p-6">
-          <div className="animate-pulse">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
-                  <div className="aspect-video bg-gray-200 rounded mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-6 bg-gray-200 rounded w-1/2 mb-3"></div>
-                  <div className="h-8 bg-gray-200 rounded"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
+    const statusSpecificItems = {
+      active: [
+        ...baseItems,
+        { 
+          icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>, 
+          label: 'Mark as sold out', 
+          action: 'markSold' 
+        },
+      ],
+      pending: baseItems,
+      renew: [
+        ...baseItems,
+        { 
+          icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 4v6h6" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>, 
+          label: 'Renew', 
+          action: 'renew' 
+        },
+      ],
+      closed: [
+        ...baseItems,
+        { 
+          icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>, 
+          label: 'Republish', 
+          action: 'republish' 
+        },
+      ],
+      drafts: baseItems,
+      rejected: baseItems,
+    };
 
-    if (error) {
-      return (
-        <div className="text-center py-8">
-          <div className="text-red-500 text-lg mb-4">Error loading products</div>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => refetch()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Try Again
-          </button>
-        </div>
-      );
-    }
+    const items = statusSpecificItems[product.status] || baseItems;
 
-    // Special case for unpaid tab with alert banner
-    if (activeTab === 'unpaid') {
-      return (
-        <>
-          {/* Alert Banner for Unpaid Tab */}
-          <div className="bg-[#FE7A3633] border border-orange-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-[#EC6A0D] flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-[#EC6A0D] text-sm mb-1">Complete order</h3>
-              <p className="text-sm text-[#EC6A0D]">
-                Please see offers accepted by seller
-              </p>
-            </div>
-          </div>
-
-          {renderListingsGrid(currentProducts)}
-        </>
-      );
-    }
-
-    return renderListingsGrid(currentProducts);
+    return [
+      ...items,
+      { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
+    ];
   };
+
+  const filteredProducts = products.filter(product => 
+    product.status === activeTab && 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="w-full flex flex-col min-h-screen">
-      <div className="hidden md:block">
-        <Header/>
-      </div>
-
-      <div className="block md:hidden fixed top-0 left-0 right-0 z-50">
-        <MobileTopBar/>
-      </div>
-
-      <div className="w-full flex flex-col lg:flex-row flex-1 mx-auto p-3 sm:p-4 md:p-6 bg-gray-50 mt-[80px] sm:mt-0">
-        {/* Sidebar - hidden on mobile, shown on lg screens */}
-        <div className="hidden lg:block lg:w-64 xl:w-72 flex-shrink-0">
-          <VerticalNavMenu/>
+    <div className="w-full h-screen flex flex-col bg-white">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <button onClick={navigateBack} className="p-1">
+            <ArrowLeft className="w-6 h-6 text-gray-700" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900">My listing</h1>
         </div>
+        <button className="p-1">
+          <Settings className="w-6 h-6 text-gray-700" />
+        </button>
+      </div>
 
-        {/* Main content */}
-        <div className="flex flex-col w-full lg:ml-6 xl:ml-8 lg:mt-[30px] max-w-7xl">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 px-2 sm:px-0">
-            My Listings
-          </h1>
+      {/* Search Bar */}
+      <div className="px-4 py-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full placeholder-gray-500 pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
 
-          {/* Tabs - Scrollable on mobile */}
-          <div className="bg-white border-b border-gray-200 mb-4 sm:mb-6 -mx-3 sm:mx-0 overflow-hidden">
-            <div className="flex overflow-x-auto scrollbar-hide">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors duration-200 relative whitespace-nowrap flex-shrink-0 ${
-                    activeTab === tab.id
-                      ? 'text-blue-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className={`ml-2 py-0.5 px-2 text-xs rounded-full ${
-                      activeTab === tab.id
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
-                  )}
-                </button>
-              ))}
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-3 text-sm font-medium whitespace-nowrap relative flex-shrink-0 ${
+              activeTab === tab.id
+                ? 'text-[#3652AD]'
+                : 'text-gray-600'
+            }`}
+          >
+            {tab.label}
+            {activeTab === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3652AD]" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Product List */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <FileText className="w-12 h-12 mb-3 text-gray-300" />
+            <p className="text-sm">No {tabs.find(tab => tab.id === activeTab)?.label?.toLowerCase()} listings found</p>
+          </div>
+        ) : (
+          filteredProducts.map((product) => (
+            <div key={product.id} className="px-4 py-4 border-b border-gray-100">
+              <div className="flex gap-3">
+                {/* Product Image */}
+                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Product Details */}
+                <div className="flex-1 min-w-0 w-full">
+                  <div className="flex justify-between items-start mb-1 w-full">
+                    <div className="w-full">
+                      <div className='border-b border-gray-400 pb-1'>
+                      <h3 className="text-sm font-medium text-gray-900 mb-1">
+                        {product.name}
+                      </h3>
+                      <p className="text-base font-bold text-gray-900 mb-2">
+                        {formatPrice(product.price)}
+                      </p>
+                      </div>
+                      <div className='flex w-full justify-between mt-3'>
+                      <p className="text-xs text-gray-500 mb-1">
+                        Listed on: {product.listedOn}
+                      </p>
+                       <span className={`text-xs font-medium ${getStatusColor(product.status)}`}>
+                        {getStatusText(product.status)}
+                      </span>
+                      </div>
+                      {/* {product.expiresOn && (
+                        <p className="text-xs text-orange-500 mb-1">
+                          Expires on: {product.expiresOn}
+                        </p>
+                      )} */}
+                      {product.reason && (
+                        <p className="text-xs text-red-500 mb-1">
+                          Reason: {product.reason}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Status and Menu */}
+                    <div className="flex items-center gap-2">
+                     
+                      <div className="relative">
+                        <button 
+                          onClick={() => toggleMenu(product.id)}
+                          className="p-1"
+                        >
+                          <MoreVertical className="w-5 h-5 text-gray-600" />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {openMenuId === product.id && (
+                          <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                            {getMenuItems(product).map((item, index) => (
+                              <button
+                                key={index}
+                                onClick={() => handleMenuAction(item.action, product.id)}
+                                className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 ${
+                                  item.isDestructive 
+                                    ? 'text-red-600 hover:bg-red-50' 
+                                    : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                {item.icon}
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  {getActionButtons(product)}
+                </div>
+              </div>
             </div>
-          </div>
+          ))
+        )}
+      </div>
 
-          {/* Tab Content */}
-          <div className="px-2 sm:px-0">
-            {renderTabContent()}
-          </div>
+      {/* Bottom Navigation */}
+      {/* <div className="border-t border-gray-200 bg-white">
+        <div className="flex items-center justify-around py-2">
+          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
+            <Home className="w-5 h-5" />
+            <span className="text-xs">Home</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
+            <FileText className="w-5 h-5" />
+            <span className="text-xs">Feed</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-xs">Requests</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
+            <PlusCircle className="w-5 h-5" />
+            <span className="text-xs">Sell</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-xs">Messages</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 p-2 text-blue-600">
+            <User className="w-5 h-5" />
+            <span className="text-xs">Account</span>
+          </button>
         </div>
-      </div>
-
-      <div className="block md:hidden fixed bottom-0 left-0 right-0 z-50">
-        <BottomNavigation/>
-      </div>
-      
-      <Footer/>
+      </div> */}
     </div>
   );
 };
 
-export default UnifiedListingsComponent;
+export default MyListingsPage;

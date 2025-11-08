@@ -4,21 +4,43 @@ import { productApi } from '../../api/productsApi';
 interface Product {
   _id: string;
   name: string;
-  slug: string;
   price: number;
+  originalPrice?: number;
+  rating?: number;
   images?: string[];
-  category?: string | { _id: string; name: string };
-  vendor?: string | { _id: string; businessName: string; location?: string };
+  vendor?: {
+    _id: string;
+    businessName: string;
+    location?: string;
+  } | string;
+  category?: {
+    _id: string;
+    name: string;
+  } | string;
   description?: string;
-  stock?: number;
   isWishlisted?: boolean;
+  type?: string;
+  // Add these fields from API
+  colours?: string[]; // Note: API uses British spelling 'colours'
   condition?: string;
   gender?: string;
   sizes?: string[];
-  colors?: string[];
-  bulkPricing?: Array<{ quantity: number; price: number }>;
-  // Add other fields from your backend
-  [key: string]: any;
+  bulkPrices?: {
+    quantity: number;
+    price: number;
+  }[];
+  status?: string;
+  // Location from API
+  location?: {
+    city: string;
+    state: string;
+  };
+  // Other API fields
+  isNegotiable?: boolean;
+  isShippedFromAbroad?: boolean;
+  deliveryTimelines?: Array<any>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface UseFetchProductReturn {

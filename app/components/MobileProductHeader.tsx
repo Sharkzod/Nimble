@@ -29,7 +29,7 @@ const MobileProductHeader = () => {
         </button>
         
         {/* Search Bar */}
-        <div className="flex-1">
+        <div className="flex-1 w-full">
           <div className="relative">
             <input
               type="text"

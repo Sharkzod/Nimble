@@ -5,7 +5,7 @@ import Header from '@/app/components/TopBar'
 import React from 'react'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Star, Heart, MapPin, Camera, Trash2, Edit, Minus, Plus } from 'lucide-react';
+import { Star, Heart, MapPin, Camera, Trash2, Edit, Minus, Plus, CameraIcon } from 'lucide-react';
 import Footer from '@/app/components/Footer'
 import { useFetchProduct } from '../../lib/hooks/useProductApis/useFetchProduct'
 import { useWishlist } from '../../lib/hooks/useProductApis/useWishlist'
@@ -95,10 +95,10 @@ const Product = () => {
   return Array.from({ length: maxRating }, (_, index) => (
     <Star
       key={index}
-      className={`w-4 h-4 ${
+      className={`w-3 h-3 ${
         index < Math.floor(safeRating)
-          ? 'fill-yellow-400 text-yellow-400'
-          : 'text-gray-300'
+          ? 'fill-black text-black'
+          : 'text-black'
       }`}
     />
   ));
@@ -170,18 +170,39 @@ const getVendorBusinessName = (vendor: Product['vendor']): string => {
   };
 
   // Get default colors from product or use fallback
+// Get colors from product or use fallback
 const getProductColors = (): ColorOption[] => {
   if (product?.colours && product.colours.length > 0) {
     return product.colours.map((color: string) => ({
-      color: color,
-      name: color
+      color: getColorHexCode(color), // Helper function to convert color names to hex
+      name: color.charAt(0).toUpperCase() + color.slice(1) // Capitalize first letter
     }));
   }
+  
+  // Fallback colors if no colors are provided
   return [
-    { color: '#FF6B6B', name: 'Red' },
     { color: '#000000', name: 'Black' },
-    { color: '#5B73E8', name: 'Blue' }
+    { color: '#FFFFFF', name: 'White' }
   ];
+};
+
+// Helper function to convert color names to hex codes
+const getColorHexCode = (colorName: string): string => {
+  const colorMap: { [key: string]: string } = {
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'red': '#FF0000',
+    'blue': '#0000FF',
+    'green': '#008000',
+    'yellow': '#FFFF00',
+    'purple': '#800080',
+    'pink': '#FFC0CB',
+    'orange': '#FFA500',
+    'gray': '#808080',
+    'brown': '#A52A2A'
+  };
+  
+  return colorMap[colorName.toLowerCase()] || '#CCCCCC'; // Default to gray if unknown
 };
 
   // Loading skeleton for products
@@ -278,9 +299,9 @@ const getProductColors = (): ColorOption[] => {
             </button>
 
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-3">{product.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-[20px]">{product.name}</h1>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold text-gray-900">
+                <div className="text-3xl font-bold text-gray-900 mt-[20px]">
                   {formatPrice(product.price)}
                 </div>
                 <span className="px-4 py-1.5 bg-green-100 text-green-700 text-sm font-medium rounded-full">
@@ -435,9 +456,6 @@ const getProductColors = (): ColorOption[] => {
     );
   };
 
-  // Mobile Product Detail Section
-  // Mobile Product Detail Component
-// Mobile Product Detail Component - Fixed Version
 const MobileProductDetail = () => {
   // Local state for touch handling
   const [localTouchStart, setLocalTouchStart] = useState<number>(0);
@@ -518,8 +536,11 @@ const MobileProductDetail = () => {
           </div>
           
           {/* Image Counter Badge */}
-          <div className="absolute top-4 right-4 bg-white bg-opacity-90 text-gray-800 px-2 py-1 rounded text-xs font-medium">
-            {currentImageIndex + 1}/{(product.images && product.images.length) || 0}
+          <div className="absolute top-[42vh] font-light left-4 bg-black/60 text-white py-1 px-2 rounded-[100px] text-[10px] backdrop-blur-sm">
+            <div className='flex gap-1'>
+              <CameraIcon width={16} height={16}/> 
+              {currentImageIndex + 1}/{(product.images && product.images.length) || 0}
+            </div>
           </div>
 
           {/* Wishlist Button */}
@@ -529,18 +550,20 @@ const MobileProductDetail = () => {
               handleWishlistToggle(product._id, product.isWishlisted || false);
             }}
             disabled={wishlistLoading}
-            className="absolute bottom-4 right-4 p-2.5 bg-white rounded-full shadow-md disabled:opacity-50"
+            className="absolute bottom-4 right-4 p-1 bg-black/60 text-white rounded-[100px] text-sm font-medium backdrop-blur-sm"
           >
-            <Heart
-              className={`w-5 h-5 ${
-                product.isWishlisted
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-gray-600'
-              }`}
-            />
-            <span className="absolute -top-1 -right-1 bg-white text-gray-800 text-xs px-1.5 py-0.5 rounded-full">
-              26
-            </span>
+            <div className='flex'>
+              <Heart
+                className={`w-3.5 h-3.5 ${
+                  product.isWishlisted
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-white'
+                }`}
+              />
+              <span className="text-white text-[10px] px-1 rounded-[100px]">
+                26
+              </span>
+            </div>
           </button>
 
           {/* Navigation Dots */}
@@ -563,18 +586,20 @@ const MobileProductDetail = () => {
         </div>
 
         {/* Product Details */}
-        <div className="px-4 py-3 space-y-3">
+        <div className="px-4 py-3">
           {/* Location and Promoted */}
           <div className="flex justify-between items-start">
             <div className="flex items-center text-gray-600">
-              <MapPin className="w-4 h-4 mr-1" />
-              <span className="text-sm">{getVendorLocation(product.location.state)}</span>
+              <MapPin className="w-3 h-3 mr-1" />
+              <span className="text-[11px]">
+                {product.location?.state || getVendorLocation(product.vendor)}
+              </span>
             </div>
-            <span className="text-xs text-gray-500">Promoted</span>
+            <span className="text-[11px] text-gray-500 border bg-gray-100 border-gray-400 py-0.5 px-1 rounded-[100px]">Promoted</span>
           </div>
 
           {/* Product Name */}
-          <h1 className="text-xl font-semibold text-gray-900 leading-snug text-[18px]">
+          <h1 className="font-semilight text-gray-900 leading-snug text-[15px]">
             {product.name}
           </h1>
 
@@ -584,7 +609,7 @@ const MobileProductDetail = () => {
           </div>
 
           {/* Star Rating */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-[0.2px]">
             {renderStars(product.rating)}
           </div>
 
@@ -601,7 +626,7 @@ const MobileProductDetail = () => {
           {/* Additional Information */}
           <div className="space-y-4 pt-2">
             {/* Bulk Pricing */}
-            {/* {product.bulkPrices && product.bulkPrices.length > 0 && (
+            {product.bulkPrices && product.bulkPrices.length > 0 && (
               <div className="border-t border-gray-200 pt-4">
                 <h3 className="font-semibold text-gray-900 mb-3 text-base">Bulk price</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -613,9 +638,8 @@ const MobileProductDetail = () => {
                   ))}
                 </div>
               </div>
-            )} */}
-
-            {/* Specifications */}
+            )}      
+            {/* Specifications - FIXED */}
             <div className="border-t border-gray-200 pt-4">
               <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                 {product.type && (
@@ -630,10 +654,11 @@ const MobileProductDetail = () => {
                     <p className="text-base font-medium text-gray-900">{product.gender}</p>
                   </div>
                 )}
-                {product.color && (
+                {/* FIXED: Changed from product.color to product.colours */}
+                {product.colours && product.colours.length > 0 && (
                   <div>
                     <h4 className="text-sm text-gray-600 mb-1">Color</h4>
-                    <p className="text-base font-medium text-gray-900">{product.color}</p>
+                    <p className="text-base font-medium text-gray-900">{product.colours.join(', ')}</p>
                   </div>
                 )}
                 {product.sizes && product.sizes.length > 0 && (
@@ -642,6 +667,7 @@ const MobileProductDetail = () => {
                     <p className="text-base font-medium text-gray-900">{product.sizes.join(', ')}</p>
                   </div>
                 )}
+                {/* FIXED: This should now display properly */}
                 {product.condition && (
                   <div>
                     <h4 className="text-sm text-gray-600 mb-1">Condition</h4>
@@ -650,6 +676,36 @@ const MobileProductDetail = () => {
                 )}
               </div>
             </div>
+
+            {/* Delivery Information */}
+            {product.deliveryTimelines && product.deliveryTimelines.length > 0 && 
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="font-semibold text-gray-900 mb-3 text-base">Delivery</h3>
+                <div className="gap-5 flex">
+                  {product.deliveryTimelines.map((delivery: { city: string; period: string; _id: string }, index: number) => (
+                    <div key={delivery._id} className="flex justify-between items-center">
+                      <div>
+                        <p className="text-base font-medium text-gray-900">{delivery.city}</p>
+                        <p className="text-sm text-gray-600">{delivery.period}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Delivery Options */}
+                {product.shippingOptions && product.shippingOptions.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Delivery options</h4>
+                    <div className="space-y-2">
+                      {product.shippingOptions.map((option: string, index: number) => (
+                        <p key={index} className="text-sm text-gray-700">{option}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            }
+
             
             {/* Description */}
             <div className="border-t border-gray-200 pt-4">
@@ -678,6 +734,7 @@ const MobileProductDetail = () => {
     </div>
   );
 };
+
   // Render product card component
 // Render product card component
 const ProductCard = ({ product }: { product: Product }) => (

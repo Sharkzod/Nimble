@@ -101,10 +101,10 @@ const transformProduct = (product: any): TransformedProduct => {
     return Array.from({ length: maxRating }, (_, index) => (
       <Star
         key={index}
-        className={`w-3 h-3 ${
+        className={`w-2 h-2 ${
           index < rating
-            ? 'fill-yellow-400 text-yellow-400'
-            : 'text-gray-300'
+            ? 'fill-black text-black'
+            : 'text-black'
         }`}
       />
     ));
@@ -208,11 +208,11 @@ const transformProduct = (product: any): TransformedProduct => {
                 <div className="p-3">
                   {/* Rating */} 
                   <div className='relative flex w-full justify-between'>
-                  <div className="flex items-center gap-1 mb-1">
+                  <div className="flex items-center gap-[0.2px] mb-1">
                     {renderStars(product.rating, product.maxRating)}
-                    <span className="text-xs text-gray-500 ml-1">
+                    {/* <span className="text-xs text-gray-500 ml-1">
                       ({product.rating})
-                    </span>
+                    </span> */}
                   </div>
                   <button
                     onClick={(e) => {
@@ -224,7 +224,7 @@ const transformProduct = (product: any): TransformedProduct => {
                     className="absolute right-0 p-0.7 sm:p-1.5 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-colors duration-200 disabled:opacity-50"
                   >
                     <Heart
-                      className={`w-3.5 h-3.5 ${
+                      className={`w-2.5 h-2.5 ${
                         product.isWishlisted
                           ? 'fill-red-500 text-red-500'
                           : 'text-gray-600 hover:text-red-500'
@@ -234,7 +234,7 @@ const transformProduct = (product: any): TransformedProduct => {
                   </div>
 
                   {/* Product Name */}
-                  <h3 className="text-[11px] sm:text-sm font-medium text-gray-900 mb-1 line-clamp-2 leading-tight">
+                  <h3 className="text-[11px] sm:text-sm font-light text-gray-900 mb-1 line-clamp-2 leading-tight">
                     {product.name}
                   </h3>
 
