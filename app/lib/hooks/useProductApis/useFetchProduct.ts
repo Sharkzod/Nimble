@@ -20,8 +20,7 @@ interface Product {
   description?: string;
   isWishlisted?: boolean;
   type?: string;
-  // Add these fields from API
-  colours?: string[]; // Note: API uses British spelling 'colours'
+  color?: string;
   condition?: string;
   gender?: string;
   sizes?: string[];
@@ -29,19 +28,19 @@ interface Product {
     quantity: number;
     price: number;
   }[];
+  colours?: string[];
   status?: string;
-  // Location from API
-  location?: {
+  shippingOptions?: string[];
+  deliveryTimelines?: {
+    _id: string;
     city: string;
-    state: string;
+    period: string;
+  }[];
+  location?: {
+    state?: string;
   };
-  // Other API fields
-  isNegotiable?: boolean;
-  isShippedFromAbroad?: boolean;
-  deliveryTimelines?: Array<any>;
-  createdAt?: string;
-  updatedAt?: string;
 }
+
 
 interface UseFetchProductReturn {
   product: Product | null;
