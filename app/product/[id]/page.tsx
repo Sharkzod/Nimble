@@ -28,7 +28,7 @@ interface Product {
   category?: {
     _id: string;
     name: string;
-  } | string; // Allow category to be string or object
+  } | string;
   description?: string;
   isWishlisted?: boolean;
   type?: string;
@@ -42,6 +42,17 @@ interface Product {
   }[];
   colours?: string[];
   status?: string;
+  
+  // ADD THESE MISSING PROPERTIES:
+  shippingOptions?: string[];
+  deliveryTimelines?: {
+    _id: string;
+    city: string;
+    period: string;
+  }[];
+  location?: {
+    state?: string;
+  };
 }
 
 interface ColorOption {
