@@ -702,16 +702,16 @@ const MobileProductDetail = () => {
                 </div>
                 
                 {/* Delivery Options */}
-                {(product as Product).shippingOptions && (product as Product).shippingOptions.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Delivery options</h4>
-                    <div className="space-y-2">
-                      {product.shippingOptions.map((option: string, index: number) => (
-                        <p key={index} className="text-sm text-gray-700">{option}</p>
-                      ))}
-                    </div>
+              {product?.shippingOptions && product.shippingOptions.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Delivery options</h4>
+                  <div className="space-y-2">
+                    {product.shippingOptions.map((option: string, index: number) => (
+                      <p key={index} className="text-sm text-gray-700">{option}</p>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
               </div>
             }
 
