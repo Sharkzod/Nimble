@@ -16,6 +16,13 @@ interface Product {
   reason?: string;
 }
 
+interface MenuItem {
+  icon: React.ReactElement;
+  label: string;
+  action: string;
+  isDestructive?: boolean; // Make it optional
+}
+
 const mockProducts: Product[] = [
   {
     id: '1',
@@ -329,59 +336,68 @@ const MyListingsPage = () => {
     }
   };
 
-  const getMenuItems = (product: Product) => {
-    const baseItems = [
-      { icon: <Edit className="w-4 h-4" />, label: 'Edit', action: 'edit' },
-      { icon: <Eye className="w-4 h-4" />, label: 'View', action: 'view' },
-      { icon: <Share2 className="w-4 h-4" />, label: 'Share', action: 'share' },
-    ];
+  // Add this interface with your other type definitions
+interface MenuItem {
+  icon: React.ReactElement;
+  label: string;
+  action: string;
+  isDestructive?: boolean; // Make it optional
+}
 
-    const statusSpecificItems = {
-      active: [
-        ...baseItems,
-        { 
-          icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <path d="M9 12l2 2 4-4" />
-          </svg>, 
-          label: 'Mark as sold out', 
-          action: 'markSold' 
-        },
-      ],
-      pending: baseItems,
-      renew: [
-        ...baseItems,
-        { 
-          icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M1 4v6h6" />
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-          </svg>, 
-          label: 'Renew', 
-          action: 'renew' 
-        },
-      ],
-      closed: [
-        ...baseItems,
-        { 
-          icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>, 
-          label: 'Republish', 
-          action: 'republish' 
-        },
-      ],
-      drafts: baseItems,
-      rejected: baseItems,
-    };
+// Update the getMenuItems function to use this interface
+const getMenuItems = (product: Product): MenuItem[] => {
+  const baseItems: MenuItem[] = [
+    { icon: <Edit className="w-4 h-4" />, label: 'Edit', action: 'edit' },
+    { icon: <Eye className="w-4 h-4" />, label: 'View', action: 'view' },
+    { icon: <Share2 className="w-4 h-4" />, label: 'Share', action: 'share' },
+  ];
 
-    const items = statusSpecificItems[product.status] || baseItems;
-
-    return [
-      ...items,
-      { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
-    ];
+  const statusSpecificItems: Record<ListingTab, MenuItem[]> = {
+    active: [
+      ...baseItems,
+      { 
+        icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>, 
+        label: 'Mark as sold out', 
+        action: 'markSold' 
+      },
+    ],
+    pending: baseItems,
+    renew: [
+      ...baseItems,
+      { 
+        icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M1 4v6h6" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+        </svg>, 
+        label: 'Renew', 
+        action: 'renew' 
+      },
+    ],
+    closed: [
+      ...baseItems,
+      { 
+        icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>, 
+        label: 'Republish', 
+        action: 'republish' 
+      },
+    ],
+    drafts: baseItems,
+    rejected: baseItems,
   };
+
+  const items = statusSpecificItems[product.status] || baseItems;
+
+  return [
+    ...items,
+    { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
+  ];
+};
 
   const filteredProducts = products.filter(product => 
     product.status === activeTab && 
