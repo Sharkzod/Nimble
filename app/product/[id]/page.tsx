@@ -401,10 +401,10 @@ const getColorHexCode = (colorName: string): string => {
                   <p className="font-semibold text-gray-900">{product.gender}</p>
                 </div>
               )}
-              {product.color && (
+              {product.colours && product.colours.length > 0 && (
                 <div>
                   <h3 className="text-sm text-gray-600 mb-1">Color</h3>
-                  <p className="font-semibold text-gray-900">{product.color}</p>
+                  <p className="font-semibold text-gray-900">{product.colours.join(', ')}</p>
                 </div>
               )}
               {product.condition && (
