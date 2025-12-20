@@ -4,6 +4,7 @@ import ReviewsSectionComponent from '@/app/components/ProductReview'
 import Header from '@/app/components/TopBar'
 import React from 'react'
 import { useState, useEffect } from 'react'
+import { useAuthStore } from '@/app/lib/stores/useAuthStore'
 import { useParams, useRouter } from 'next/navigation'
 import { Star, Heart, MapPin, Camera, Trash2, Edit, Minus, Plus, CameraIcon } from 'lucide-react';
 import Footer from '@/app/components/Footer'
@@ -11,6 +12,7 @@ import { useFetchProduct } from '../../lib/hooks/useProductApis/useFetchProduct'
 import { useWishlist } from '../../lib/hooks/useProductApis/useWishlist'
 import BottomNavigation from '@/app/components/BottomNav'
 import MobileProductHeader from '@/app/components/MobileProductHeader'
+import { useChatNavigation } from '@/app/lib/hooks/useChatApis/useChatNavigation'
 // import { Product } from '@/app/lib/api/productsApi'
 
 interface Product {
@@ -62,6 +64,8 @@ const Product = () => {
   const params = useParams();
   const router = useRouter();
   const productId = params.id as string;
+  const { user: currentUser, isAuthenticated } = useAuthStore();
+  const { navigateToChat } = useChatNavigation();
 
   const { 
     product, 
@@ -138,6 +142,64 @@ const getVendorBusinessName = (vendor: Product['vendor']): string => {
     );
   }
 };
+
+const handleMessageSeller = async () => {
+    if (!product || !product.vendor) {
+      console.error('Product or vendor information missing');
+      alert('Unable to message seller. Product information is incomplete.');
+      return;
+    }
+
+    const vendorId = typeof product.vendor === 'string' ? product.vendor : product.vendor._id;
+    const vendorBusinessName = typeof product.vendor === 'string' ? 'Seller' : product.vendor.businessName;
+
+    console.log('💬 Message seller clicked:', {
+      productId: product._id,
+      vendorId,
+      vendorBusinessName,
+      currentUserId: currentUser?._id
+    });
+
+    await navigateToChat({
+      productId: product._id,
+      sellerId: vendorId,
+      buyerId: currentUser?._id || '',
+      productName: product.name,
+      productPrice: product.price,
+      productImages: product.images || []
+    });
+  };
+
+const handleBuyNow = async () => {
+    if (!product || !product.vendor) {
+      console.error('Product or vendor information missing');
+      alert('Unable to proceed with purchase. Product information is incomplete.');
+      return;
+    }
+
+    const vendorId = typeof product.vendor === 'string' ? product.vendor : product.vendor._id;
+
+    console.log('🛒 Buy now clicked:', {
+      productId: product._id,
+      vendorId,
+      currentUserId: currentUser?._id
+    });
+
+    const chat = await navigateToChat({
+      productId: product._id,
+      sellerId: vendorId,
+      buyerId: currentUser?._id || '',
+      productName: product.name,
+      productPrice: product.price,
+      productImages: product.images || []
+    });
+
+    // Optional: You could add an automatic "I want to buy this" message here
+    if (chat) {
+      console.log('✅ Chat created for purchase, could send automatic message');
+      // You could add logic here to send an automatic "I want to buy this" message
+    }
+  };
 
 
  const prevImage = () => {
@@ -624,13 +686,21 @@ const MobileProductDetail = () => {
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
-            <button className="flex-1 bg-white text-[#3652AD] border border-[#3652AD] py-3.5 px-4 rounded-[100px] font-medium text-sm hover:bg-blue-50 transition-colors">
-              Message seller
-            </button>
-            <button className="flex-1 bg-[#3652AD] text-white py-3.5 px-4 rounded-[100px] font-medium text-sm hover:bg-blue-700 transition-colors">
-              Buy now
-            </button>
-          </div>
+          <button 
+            onClick={handleMessageSeller}
+            className="flex-1 bg-white text-[#3652AD] border border-[#3652AD] py-3.5 px-4 rounded-[100px] font-medium text-sm hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!product || !product.vendor}
+          >
+            Message seller
+          </button>
+          <button 
+            onClick={handleBuyNow}
+            className="flex-1 bg-[#3652AD] text-white py-3.5 px-4 rounded-[100px] font-medium text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!product || !product.vendor}
+          >
+            Buy now
+          </button>
+        </div>
 
           {/* Additional Information */}
           <div className="space-y-4 pt-2">

@@ -1,6 +1,8 @@
+// app/components/settingsComponents/NotificationSettings.tsx
 'use client';
 
 import { useState } from 'react';
+import SettingsComponentFactory from './SettingsComponentFactory';
 
 interface NotificationSettings {
   email: {
@@ -19,7 +21,10 @@ interface NotificationSettings {
 
 interface NotificationSettingsProps {
   initialSettings?: NotificationSettings;
-  onChange?: (settings: NotificationSettings) => void;
+  onSave?: (settings: NotificationSettings) => void;
+  onCancel?: () => void;
+  settingsRoute?: string;
+  showFullLayout?: boolean;
 }
 
 export default function NotificationSettings({
@@ -37,7 +42,10 @@ export default function NotificationSettings({
       newsletter: true
     }
   },
-  onChange
+  onSave,
+  onCancel,
+  settingsRoute = '/settings',
+  showFullLayout = false
 }: NotificationSettingsProps) {
   const [settings, setSettings] = useState<NotificationSettings>(initialSettings);
 
@@ -50,8 +58,17 @@ export default function NotificationSettings({
       }
     };
     setSettings(newSettings);
-    if (onChange) {
-      onChange(newSettings);
+  };
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave(settings);
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
     }
   };
 
@@ -78,78 +95,91 @@ export default function NotificationSettings({
   );
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-8 bg-gray-50">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-8">Notification settings</h1>
+    <SettingsComponentFactory
+      title="Notification settings"
+      settingsRoute={settingsRoute}
+      showFullLayout={showFullLayout}
+      onSave={handleSave}
+      onCancel={handleCancel}
+      showActionButtons={false}
+    >
+      <div className="flex flex-col min-h-screen">
+        {/* Main Content */}
+        <div className="flex-1 px-6 py-6">
+          <div className="space-y-8">
+            {/* Email Notifications */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 mb-4">Email notifications</h2>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Messages</span>
+                  
+                  <Toggle
+                    isOn={settings.email.messages}
+                    onToggle={() => handleToggle('email', 'messages')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Offers</span>
+                  <Toggle
+                    isOn={settings.email.offers}
+                    onToggle={() => handleToggle('email', 'offers')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Payment approval</span>
+                  <Toggle
+                    isOn={settings.email.paymentApproval}
+                    onToggle={() => handleToggle('email', 'paymentApproval')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Newsletter</span>
+                  <Toggle
+                    isOn={settings.email.newsletter}
+                    onToggle={() => handleToggle('email', 'newsletter')}
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* Email Notifications */}
-      <div className="mb-8">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Email notifications</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Messages</span>
-            <Toggle
-              isOn={settings.email.messages}
-              onToggle={() => handleToggle('email', 'messages')}
-            />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Offers</span>
-            <Toggle
-              isOn={settings.email.offers}
-              onToggle={() => handleToggle('email', 'offers')}
-            />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Payment approval</span>
-            <Toggle
-              isOn={settings.email.paymentApproval}
-              onToggle={() => handleToggle('email', 'paymentApproval')}
-            />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Newsletter</span>
-            <Toggle
-              isOn={settings.email.newsletter}
-              onToggle={() => handleToggle('email', 'newsletter')}
-            />
+            {/* In-app Notifications */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 mb-4">In-app notifications</h2>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Messages</span>
+                  <Toggle
+                    isOn={settings.inApp.messages}
+                    onToggle={() => handleToggle('inApp', 'messages')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Offers</span>
+                  <Toggle
+                    isOn={settings.inApp.offers}
+                    onToggle={() => handleToggle('inApp', 'offers')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Payment approval</span>
+                  <Toggle
+                    isOn={settings.inApp.paymentApproval}
+                    onToggle={() => handleToggle('inApp', 'paymentApproval')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">Newsletter</span>
+                  <Toggle
+                    isOn={settings.inApp.newsletter}
+                    onToggle={() => handleToggle('inApp', 'newsletter')}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* In-app Notifications */}
-      <div>
-        <h2 className="text-base font-semibold text-gray-800 mb-4">In-app notifications</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Messages</span>
-            <Toggle
-              isOn={settings.inApp.messages}
-              onToggle={() => handleToggle('inApp', 'messages')}
-            />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Offers</span>
-            <Toggle
-              isOn={settings.inApp.offers}
-              onToggle={() => handleToggle('inApp', 'offers')}
-            />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Payment approval</span>
-            <Toggle
-              isOn={settings.inApp.paymentApproval}
-              onToggle={() => handleToggle('inApp', 'paymentApproval')}
-            />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-base text-gray-700">Newsletter</span>
-            <Toggle
-              isOn={settings.inApp.newsletter}
-              onToggle={() => handleToggle('inApp', 'newsletter')}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    </SettingsComponentFactory>
   );
 }

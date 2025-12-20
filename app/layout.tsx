@@ -5,6 +5,7 @@ import "./globals.css";
 import LayoutWrapper from "./components/LayoutWrapper";
 import TokenDebugger from "./components/DebugAuth";
 import RedirectDebugger from "./components/DebugAuth";
+import { Providers } from "./providers";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -29,7 +30,9 @@ export default function RootLayout({
         <div className='bg-white h-[100%]'>
           <LayoutWrapper>
           <RedirectDebugger/>
+          <Providers>
         {children}
+        </Providers>
         </LayoutWrapper>
         </div>
       </body>
