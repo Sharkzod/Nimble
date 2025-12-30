@@ -1,8 +1,8 @@
-// app/components/settingsComponents/BusinessDetails.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SettingsComponentFactory from './SettingsComponentFactory';
+import { useBusinessProfileApi } from '@/app/lib/hooks/useSettingsApis/useBusinessProfileApi';
 
 interface BusinessDetailsProps {
   initialData?: {
@@ -30,7 +30,7 @@ interface BusinessDetailsFormData {
 
 export default function BusinessDetails({
   initialData = {
-    businessName: 'Opeyemi',
+    businessName: '',
     about: '',
     address: '',
     city: '',
@@ -44,6 +44,49 @@ export default function BusinessDetails({
   showFullLayout = false
 }: BusinessDetailsProps) {
   const [formData, setFormData] = useState<BusinessDetailsFormData>(initialData);
+  const { 
+    updateBusinessProfile, 
+    getBusinessProfile, // Make sure this is destructured
+    isLoading, 
+    error, 
+    success, 
+    resetState 
+  } = useBusinessProfileApi();
+
+  // Load initial data from API on component mount
+  useEffect(() => {
+    const loadBusinessProfile = async () => {
+      try {
+        const response = await getBusinessProfile(); // Use getBusinessProfile from hook
+        if (response && response.data && response.data.businessDetails) {
+          const businessDetails = response.data.businessDetails;
+          setFormData({
+            businessName: businessDetails.businessName || '',
+            about: businessDetails.businessInformation || '', // Note: mapping here
+            address: businessDetails.address || '',
+            city: businessDetails.city || '',
+            state: businessDetails.state || ''
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load business profile:', err);
+        // You might want to handle this error state in your UI
+      }
+    };
+
+    loadBusinessProfile();
+  }, [getBusinessProfile]); // Add getBusinessProfile to dependency array
+
+  // Rest of your component remains the same...
+  // Handle success/error messages
+  useEffect(() => {
+    if (success || error) {
+      const timer = setTimeout(() => {
+        resetState();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, error, resetState]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -52,13 +95,36 @@ export default function BusinessDetails({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave(formData);
+  const handleSave = async () => {
+    try {
+      // Prepare data for API - map "about" to "businessInformation"
+      const apiData = {
+        businessName: formData.businessName,
+        businessInformation: formData.about, // This is the mapping
+        address: formData.address,
+        city: formData.city,
+        state: formData.state
+      };
+
+      // Call the API
+      const result = await updateBusinessProfile(apiData);
+
+      if (result.success) {
+        // If custom onSave is provided, call it
+        if (onSave) {
+          onSave(formData);
+        }
+      }
+    } catch (err) {
+      // Error is already handled in the hook
+      console.error('Failed to save business details:', err);
     }
   };
 
   const handleCancel = () => {
+    // Reset form to initial data
+    setFormData(initialData);
+    
     if (onCancel) {
       onCancel();
     }
@@ -73,6 +139,22 @@ export default function BusinessDetails({
       onCancel={handleCancel}
     >
       <div className="flex flex-col">
+        {/* Status Messages */}
+        {(success || error) && (
+          <div className="px-6">
+            {success && (
+              <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
+                {success}
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="flex-1 px-6 py-6">
           <div className="space-y-6">
@@ -87,7 +169,9 @@ export default function BusinessDetails({
                 name="businessName"
                 value={formData.businessName}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+                disabled={isLoading}
+                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white disabled:opacity-50"
+                placeholder="Enter your business name"
               />
             </div>
 
@@ -103,7 +187,8 @@ export default function BusinessDetails({
                 onChange={handleInputChange}
                 placeholder="This will be displayed on your profile"
                 rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base placeholder:text-gray-400 resize-none bg-white"
+                disabled={isLoading}
+                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base placeholder:text-gray-400 resize-none bg-white disabled:opacity-50"
               />
             </div>
 
@@ -118,7 +203,9 @@ export default function BusinessDetails({
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+                disabled={isLoading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white disabled:opacity-50"
+                placeholder="Enter your business address"
               />
             </div>
 
@@ -134,7 +221,8 @@ export default function BusinessDetails({
                   name="city"
                   value={formData.city}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base appearance-none bg-white cursor-pointer"
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base appearance-none bg-white cursor-pointer disabled:opacity-50"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
@@ -162,7 +250,8 @@ export default function BusinessDetails({
                   name="state"
                   value={formData.state}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base appearance-none bg-white cursor-pointer"
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base appearance-none bg-white cursor-pointer disabled:opacity-50"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
@@ -184,25 +273,37 @@ export default function BusinessDetails({
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-       
-          <div className="px-6 bg-white border-t border-gray-100 mt-[40px]">
+        <div className="px-6 bg-white border-t border-gray-100 mt-[40px]">
           <div className="flex gap-3">
             <button
               onClick={handleCancel}
-            className="flex-1 px-6 py-2 bg-[#FE7A3633] cursor-pointer text-[#FE7A36] rounded-full font-medium text-base transition-colors"
+              disabled={isLoading}
+              className="flex-1 px-6 py-2 bg-[#FE7A3633] cursor-pointer text-[#FE7A36] rounded-full font-medium text-base transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 px-6 py-2 bg-[#3652AD] text-white rounded-full font-medium text-base transition-colors"
+              disabled={isLoading}
+              className="flex-1 px-6 py-2 bg-[#3652AD] text-white rounded-full font-medium text-base transition-colors disabled:opacity-50 flex items-center justify-center"
             >
-              Save
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                'Save'
+              )}
             </button>
           </div>
         </div>
-        </div>
-      
+      </div>
     </SettingsComponentFactory>
   );
 }
+
+// Helper function to fetch business profile (you can move this to your hook)

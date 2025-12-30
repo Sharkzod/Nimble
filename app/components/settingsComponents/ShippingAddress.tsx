@@ -1,8 +1,10 @@
-// app/components/settingsComponents/ShippingAddress.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SettingsComponentFactory from './SettingsComponentFactory';
+import { useDeliveryAddress } from '@/app/lib/hooks/useSettingsApis/useDeliveryAddress';
+import toast from 'react-hot-toast';
+import AddressModal from '../AddressModal';
 
 interface Address {
   id: string;
@@ -16,136 +18,141 @@ interface Address {
 }
 
 interface ShippingAddressProps {
-  initialAddresses?: Address[];
   onSave?: (addresses: Address[]) => void;
   onCancel?: () => void;
   settingsRoute?: string;
   showFullLayout?: boolean;
-  cities?: string[];
-  states?: string[];
 }
 
 export default function ShippingAddress({
-  initialAddresses = [
-    {
-      id: '1',
-      name: 'John Apaokagi',
-      phone: '+234-687-5878-57',
-      address: '177, Aggrey Road,Ibadan, Oyo state.',
-      zipcode: '',
-      city: 'Nsukka',
-      state: 'Enugu',
-      isDefault: true
-    },
-    {
-      id: '2',
-      name: 'John Apaokagi',
-      phone: '+234-687-5878-57',
-      address: '177, Aggrey Road,Ibadan, Oyo state.',
-      zipcode: '',
-      city: 'Nsukka',
-      state: 'Enugu',
-      isDefault: false
-    }
-  ],
   onSave,
   onCancel,
   settingsRoute = '/settings',
   showFullLayout = false,
-  cities = ['Nsukka', 'Enugu', 'Lagos', 'Abuja', 'Port Harcourt', 'Ibadan'],
-  states = ['Enugu', 'Lagos', 'FCT', 'Rivers', 'Oyo', 'Kano']
 }: ShippingAddressProps) {
-  const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
+  const {
+    addresses: backendAddresses,
+    loading,
+    error,
+    success,
+    fetchAddresses,
+    deleteAddress,
+    setDefaultAddress,
+    resetState
+  } = useDeliveryAddress();
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [formData, setFormData] = useState<Omit<Address, 'id'>>({
-    name: '',
-    phone: '',
-    address: '',
-    zipcode: '',
-    city: '',
-    state: '',
-    isDefault: false
-  });
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isSettingDefault, setIsSettingDefault] = useState<string | null>(null);
+
+  // Load addresses on component mount
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  // Show toast messages
+  useEffect(() => {
+    if (success) {
+      toast.success(success);
+      resetState();
+    }
+    if (error) {
+      toast.error(error);
+      resetState();
+    }
+  }, [success, error, resetState]);
+
+  // Map backend addresses to frontend format
+  useEffect(() => {
+    if (backendAddresses && backendAddresses.length > 0) {
+      const mappedAddresses = backendAddresses.map(addr => ({
+        id: addr._id || Math.random().toString(),
+        name: addr.name || '',
+        phone: addr.phoneNumber || '',
+        address: addr.address || '',
+        zipcode: addr.zipcode || '',
+        city: addr.city || '',
+        state: addr.state || '',
+        isDefault: addr.isDefault || false
+      }));
+      setAddresses(mappedAddresses);
+    } else {
+      setAddresses([]);
+    }
+  }, [backendAddresses]);
+
+  const loadAddresses = async () => {
+    try {
+      await fetchAddresses();
+      console.log('Addresses loaded successfully');
+    } catch (err) {
+      console.error('Failed to load addresses:', err);
+      console.log('Failed to load addresses:', err);
+    }
+  };
 
   const handleEdit = (addressId: string) => {
     const address = addresses.find(addr => addr.id === addressId);
     if (address) {
       setEditingAddress(address);
-      setFormData({
-        name: address.name,
-        phone: address.phone,
-        address: address.address,
-        zipcode: address.zipcode,
-        city: address.city,
-        state: address.state,
-        isDefault: address.isDefault
-      });
       setIsModalOpen(true);
     }
   };
 
   const handleAddNew = () => {
     setEditingAddress(null);
-    setFormData({
-      name: '',
-      phone: '',
-      address: '',
-      zipcode: '',
-      city: '',
-      state: '',
-      isDefault: false
-    });
     setIsModalOpen(true);
   };
 
-  const handleSetDefault = (addressId: string) => {
-    const updatedAddresses = addresses.map(addr => ({
-      ...addr,
-      isDefault: addr.id === addressId
-    }));
-    setAddresses(updatedAddresses);
+  const handleSetDefault = async (address: Address) => {
+    try {
+      setIsSettingDefault(address.id);
+      
+      // Extract just digits from phone for backend
+      const phoneDigits = address.phone.replace(/\D/g, '');
+      
+      const result = await setDefaultAddress(address.address, phoneDigits);
+      
+      if (!result.success) {
+        toast.error(result.message || 'Failed to set default address');
+      }
+    } catch (err) {
+      console.error('Failed to set default address:', err);
+      toast.error('Failed to set default address');
+    } finally {
+      setIsSettingDefault(null);
+    }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  const handleDeleteAddress = async (address: Address) => {
+    if (!confirm('Are you sure you want to delete this address?')) {
+      return;
+    }
+    
+    try {
+      setIsDeleting(address.id);
+      
+      // Extract just digits from phone for backend
+      const phoneDigits = address.phone.replace(/\D/g, '');
+      
+      const result = await deleteAddress(address.address, phoneDigits);
+      
+      if (!result.success) {
+        toast.error(result.message || 'Failed to delete address');
+      }
+    } catch (err) {
+      console.error('Failed to delete address:', err);
+      toast.error('Failed to delete address');
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
-  const handleSaveAddress = () => {
-    let updatedAddresses;
-    
-    if (editingAddress) {
-      // Update existing address
-      updatedAddresses = addresses.map(addr =>
-        addr.id === editingAddress.id ? { ...editingAddress, ...formData } : addr
-      );
-    } else {
-      // Add new address
-      const newAddress: Address = {
-        id: Date.now().toString(),
-        ...formData
-      };
-      updatedAddresses = [...addresses, newAddress];
-    }
-    
-    setAddresses(updatedAddresses);
-    
-    if (formData.isDefault) {
-      // Set as default if checked
-      const finalAddresses = updatedAddresses.map(addr => ({
-        ...addr,
-        isDefault: addr.id === (editingAddress?.id || Date.now().toString())
-      }));
-      setAddresses(finalAddresses);
-    }
-    
-    setIsModalOpen(false);
-    setEditingAddress(null);
+  const handleAddressSaved = async () => {
+    // Refresh addresses after saving
+    await loadAddresses();
   };
 
   const handleSaveAll = () => {
@@ -160,6 +167,8 @@ export default function ShippingAddress({
     }
   };
 
+  const isLoading = loading || isDeleting !== null || isSettingDefault !== null;
+
   return (
     <>
       <SettingsComponentFactory
@@ -171,28 +180,81 @@ export default function ShippingAddress({
         showActionButtons={false}
       >
         <div className="flex flex-col min-h-screen">
+          {/* Loading State */}
+          {loading && addresses.length === 0 && (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && addresses.length === 0 && (
+            <div className="mx-6 mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           {/* Main Content */}
           <div className="flex-1 py-6">
-            <div className="space-y-4">
+            {/* Empty State */}
+            {!loading && addresses.length === 0 && (
+              <div className="text-center py-12 px-6">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No delivery addresses</h3>
+                <p className="text-gray-600 mb-6">You haven't saved any delivery addresses yet.</p>
+                <button
+                  onClick={handleAddNew}
+                  className="px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+                >
+                  Add your first address
+                </button>
+              </div>
+            )}
+
+            {/* Address List */}
+            <div className="space-y-4 px-6">
               {addresses.map((address) => (
                 <div
                   key={address.id}
-                  className="bg-white rounded-lg p-4 border border-gray-200"
+                  className="bg-white rounded-lg p-4 border border-gray-200 relative"
                 >
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => handleDeleteAddress(address)}
+                    disabled={isLoading}
+                    className="absolute top-3 right-3 text-gray-400 hover:text-red-500 disabled:opacity-50"
+                  >
+                    {isDeleting === address.id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+
                   <div className="flex items-start gap-3">
                     {/* Radio Button */}
                     <div className="pt-1">
                       <button
-                        onClick={() => handleSetDefault(address.id)}
-                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                        onClick={() => handleSetDefault(address)}
+                        disabled={isLoading || address.isDefault}
+                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center disabled:cursor-not-allowed"
                         style={{
                           borderColor: address.isDefault ? '#ff6b35' : '#d1d5db',
                           backgroundColor: 'white'
                         }}
                       >
-                        {address.isDefault && (
+                        {isSettingDefault === address.id ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-500"></div>
+                        ) : address.isDefault ? (
                           <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                        )}
+                        ) : null}
                       </button>
                     </div>
 
@@ -209,15 +271,20 @@ export default function ShippingAddress({
                       <p className="text-sm text-gray-600 mb-0.5">
                         {address.phone}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 mb-1">
                         {address.address}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {address.city}, {address.state}
+                        {address.zipcode && ` • ${address.zipcode}`}
                       </p>
                     </div>
 
                     {/* Edit Button */}
                     <button
                       onClick={() => handleEdit(address.id)}
-                      className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      disabled={isLoading}
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50 mt-[50px]"
                     >
                       <svg
                         className="w-4 h-4"
@@ -240,196 +307,44 @@ export default function ShippingAddress({
             </div>
 
             {/* Add New Button */}
-            <div className="mt-6 flex justify-center">
-              <button
-                onClick={handleAddNew}
-                className="w-[80%] inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink-50 text-red-500 rounded-lg font-medium hover:bg-pink-100 transition-colors"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {addresses.length > 0 && (
+              <div className="mt-6 flex justify-center px-6">
+                <button
+                  onClick={handleAddNew}
+                  disabled={isLoading}
+                  className="w-full md:w-[80%] inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink-50 text-red-500 rounded-lg font-medium hover:bg-pink-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Add new delivery address
-              </button>
-            </div>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Add new delivery address
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </SettingsComponentFactory>
 
-      {/* Edit/Add Address Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 bg-red-400 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* Name */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-900 mb-2">
-                  Phone number
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                />
-              </div>
-
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label htmlFor="address" className="block text-sm font-medium text-gray-900 mb-2">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                />
-              </div>
-
-              {/* Zipcode */}
-              <div>
-                <label htmlFor="zipcode" className="block text-sm font-medium text-gray-900 mb-2">
-                  Zipcode
-                </label>
-                <input
-                  type="text"
-                  id="zipcode"
-                  name="zipcode"
-                  value={formData.zipcode}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                />
-              </div>
-
-              {/* City */}
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-900 mb-2">
-                  City
-                </label>
-                <select
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1.25rem'
-                  }}
-                >
-                  <option value="">Select City</option>
-                  {cities.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* State */}
-              <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-900 mb-2">
-                  State
-                </label>
-                <select
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1.25rem'
-                  }}
-                >
-                  <option value="">Select State</option>
-                  {states.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Save as Default Checkbox */}
-            <div className="mb-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isDefault"
-                  checked={formData.isDefault}
-                  onChange={handleInputChange}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Save address as default</span>
-              </label>
-            </div>
-
-            {/* Modal Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 px-6 py-3 bg-orange-50 text-orange-500 rounded-full font-medium hover:bg-orange-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveAddress}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors"
-              >
-                Save Address
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Address Modal */}
+      <AddressModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAddress(null);
+        }}
+        editingAddress={editingAddress}
+        onAddressSaved={handleAddressSaved}
+      />
     </>
   );
-} 
+}

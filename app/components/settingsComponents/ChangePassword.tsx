@@ -1,8 +1,9 @@
-// app/components/settingsComponents/ChangePassword.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SettingsComponentFactory from './SettingsComponentFactory';
+import { usePassword } from '@/app/lib/hooks/useSettingsApis/usePassword';
+import toast from 'react-hot-toast';
 
 interface ChangePasswordProps {
   onSubmit?: (data: PasswordFormData) => void;
@@ -23,6 +24,8 @@ export default function ChangePassword({
   settingsRoute = '/settings',
   showFullLayout = false 
 }: ChangePasswordProps) {
+  const { loading, error, success, changePassword, resetState } = usePassword();
+  
   const [formData, setFormData] = useState<PasswordFormData>({
     oldPassword: '',
     newPassword: '',
@@ -36,6 +39,17 @@ export default function ChangePassword({
   });
 
   const [errors, setErrors] = useState<Partial<PasswordFormData>>({});
+  const [localLoading, setLocalLoading] = useState(false);
+
+  // Clear messages after 3 seconds
+  useEffect(() => {
+    if (success || error) {
+      const timer = setTimeout(() => {
+        resetState();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, error, resetState]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,47 +63,104 @@ export default function ChangePassword({
     setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<PasswordFormData> = {};
+  // const validateForm = (): boolean => {
+  //   const newErrors: Partial<PasswordFormData> = {};
 
-    if (!formData.oldPassword) {
-      newErrors.oldPassword = 'Old password is required';
-    }
+  //   if (!formData.oldPassword) {
+  //     newErrors.oldPassword = 'Old password is required';
+  //   } else if (formData.oldPassword.length < 8) {
+  //     newErrors.oldPassword = 'Password must be at least 8 characters';
+  //   }
 
-    if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required';
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
-    }
+  //   if (!formData.newPassword) {
+  //     newErrors.newPassword = 'New password is required';
+  //   } else if (formData.newPassword.length < 8) {
+  //     newErrors.newPassword = 'Password must be at least 8 characters';
+  //   } else if (!/(?=.*[a-z])/.test(formData.newPassword)) {
+  //     newErrors.newPassword = 'Password must contain at least one lowercase letter';
+  //   } else if (!/(?=.*[A-Z])/.test(formData.newPassword)) {
+  //     newErrors.newPassword = 'Password must contain at least one uppercase letter';
+  //   } else if (!/(?=.*\d)/.test(formData.newPassword)) {
+  //     newErrors.newPassword = 'Password must contain at least one number';
+  //   } else if (!/(?=.*[@$!%*?&])/.test(formData.newPassword)) {
+  //     newErrors.newPassword = 'Password must contain at least one special character (@$!%*?&)';
+  //   }
 
-    if (!formData.confirmNewPassword) {
-      newErrors.confirmNewPassword = 'Please confirm your new password';
-    } else if (formData.newPassword !== formData.confirmNewPassword) {
-      newErrors.confirmNewPassword = 'Passwords do not match';
-    }
+  //   if (!formData.confirmNewPassword) {
+  //     newErrors.confirmNewPassword = 'Please confirm your new password';
+  //   } else if (formData.newPassword !== formData.confirmNewPassword) {
+  //     newErrors.confirmNewPassword = 'Passwords do not match';
+  //   }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  //   // Check if new password is same as old password
+  //   if (formData.oldPassword && formData.newPassword && formData.oldPassword === formData.newPassword) {
+  //     newErrors.newPassword = 'New password cannot be the same as old password';
+  //   }
 
-  const handleSave = () => {
-    if (validateForm()) {
-      if (onSubmit) {
-        onSubmit(formData);
+  //   setErrors(newErrors);
+  //   return Object.keys(newErrors).length === 0;
+  // };
+
+  const handleSave = async () => {
+    // if (!validateForm()) {
+    //   return;
+    // }
+
+    try {
+      setLocalLoading(true);
+      
+      // Prepare data for API (match backend field names)
+      const passwordData = {
+        currentPassword: formData.oldPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmNewPassword
+      };
+
+      const result = await changePassword(passwordData);
+      
+      if (result.success) {
+        // Clear form on successful password change
+        setFormData({
+          oldPassword: '',
+          newPassword: '',
+          confirmNewPassword: ''
+        });
+        
+        setShowPasswords({
+          old: false,
+          new: false,
+          confirm: false
+        });
+        
+        // Call parent onSubmit if provided
+        if (onSubmit) {
+          onSubmit(formData);
+        }
       }
-      setFormData({
-        oldPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
-      });
+    } catch (err) {
+      console.error('Failed to change password:', err);
+      // Error is already handled in the hook and toast will show
+    } finally {
+      setLocalLoading(false);
     }
   };
 
   const handleCancel = () => {
+    // Reset form
+    setFormData({
+      oldPassword: '',
+      newPassword: '',
+      confirmNewPassword: ''
+    });
+    
+    setErrors({});
+    
     if (onCancel) {
       onCancel();
     }
   };
+
+  const isLoading = loading || localLoading;
 
   return (
     <SettingsComponentFactory
@@ -100,7 +171,23 @@ export default function ChangePassword({
       onCancel={handleCancel}
       showActionButtons={false}
     >
-      <div className="flex flex-col bg-white border border-gray-200 rounded-lg ">
+      <div className="flex flex-col bg-white border border-gray-200 rounded-lg">
+        {/* Status Messages */}
+        {(success || error) && (
+          <div className="px-6 pt-6">
+            {success && (
+              <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
+                ✓ {success}
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                ⚠ {error}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="flex-1 px-6 py-6">
           <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
@@ -116,13 +203,15 @@ export default function ChangePassword({
                   name="oldPassword"
                   value={formData.oldPassword}
                   onChange={handleInputChange}
-                  placeholder="············"
-                  className="w-full placeholder-gray-400 px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+                  placeholder="..........."
+                  disabled={isLoading}
+                  className="w-full placeholder-gray-400 px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility('old')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={isLoading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
                   {showPasswords.old ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,13 +242,15 @@ export default function ChangePassword({
                   name="newPassword"
                   value={formData.newPassword}
                   onChange={handleInputChange}
-                  placeholder="············"
-                  className="w-full px-4 placeholder-gray-400  py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+                  placeholder=".........."
+                  disabled={isLoading}
+                  className="w-full px-4 placeholder-gray-400 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility('new')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={isLoading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
                   {showPasswords.new ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,6 +267,26 @@ export default function ChangePassword({
               {errors.newPassword && (
                 <p className="mt-1 text-sm text-red-500">{errors.newPassword}</p>
               )}
+              {/* <div className="mt-2 text-xs text-gray-500">
+                <p>Password requirements:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li className={formData.newPassword.length >= 8 ? 'text-green-500' : ''}>
+                    At least 8 characters
+                  </li>
+                  <li className={/(?=.*[a-z])/.test(formData.newPassword) ? 'text-green-500' : ''}>
+                    One lowercase letter
+                  </li>
+                  <li className={/(?=.*[A-Z])/.test(formData.newPassword) ? 'text-green-500' : ''}>
+                    One uppercase letter
+                  </li>
+                  <li className={/(?=.*\d)/.test(formData.newPassword) ? 'text-green-500' : ''}>
+                    One number
+                  </li>
+                  <li className={/(?=.*[@$!%*?&])/.test(formData.newPassword) ? 'text-green-500' : ''}>
+                    One special character (@$!%*?&)
+                  </li>
+                </ul>
+              </div> */}
             </div>
 
             {/* Confirm New Password */}
@@ -190,13 +301,15 @@ export default function ChangePassword({
                   name="confirmNewPassword"
                   value={formData.confirmNewPassword}
                   onChange={handleInputChange}
-                  placeholder="············"
-                  className="w-full px-4 py-3 placeholder-gray-400  pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+                  placeholder=".........."
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 placeholder-gray-400 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility('confirm')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={isLoading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
                   {showPasswords.confirm ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,15 +326,49 @@ export default function ChangePassword({
               {errors.confirmNewPassword && (
                 <p className="mt-1 text-sm text-red-500">{errors.confirmNewPassword}</p>
               )}
+              <div className="mt-2">
+                {formData.newPassword && formData.confirmNewPassword && (
+                  <p className={`text-sm ${formData.newPassword === formData.confirmNewPassword ? 'text-green-500' : 'text-red-500'}`}>
+                    {formData.newPassword === formData.confirmNewPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Submit Button */}
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full px-6 py-2 bg-[#3652AD] text-white rounded-full font-medium transition-colors text-base"
+                disabled={isLoading}
+                className="w-full px-6 py-3 bg-[#3652AD] text-white rounded-full font-medium transition-colors text-base hover:bg-[#2a418a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Change password
+                {isLoading ? (
+                  <>
+                    <svg 
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      fill="none" 
+                      viewBox="0 0 24 24"
+                    >
+                      <circle 
+                        className="opacity-25" 
+                        cx="12" 
+                        cy="12" 
+                        r="10" 
+                        stroke="currentColor" 
+                        strokeWidth="4"
+                      />
+                      <path 
+                        className="opacity-75" 
+                        fill="currentColor" 
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Changing Password...
+                  </>
+                ) : (
+                  'Change password'
+                )}
               </button>
             </div>
           </form>

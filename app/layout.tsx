@@ -6,6 +6,7 @@ import LayoutWrapper from "./components/LayoutWrapper";
 import TokenDebugger from "./components/DebugAuth";
 import RedirectDebugger from "./components/DebugAuth";
 import { Providers } from "./providers";
+import { Toaster } from "react-hot-toast";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -31,6 +32,30 @@ export default function RootLayout({
           <LayoutWrapper>
           <RedirectDebugger/>
           <Providers>
+            <Toaster 
+  position="top-right"
+  toastOptions={{
+    duration: 4000,
+    style: {
+      background: '#363636',
+      color: '#fff',
+    },
+    success: {
+      duration: 3000,
+      style: {
+        background: '#22c55e', // Green color
+        color: '#fff',
+      },
+    },
+    error: {
+      duration: 4000,
+      style: {
+        background: '#ef4444', // Red color
+        color: '#fff',
+      },
+    },
+  }}
+/>
         {children}
         </Providers>
         </LayoutWrapper>

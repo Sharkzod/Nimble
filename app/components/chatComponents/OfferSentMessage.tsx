@@ -26,16 +26,19 @@ export default function OfferSentMessage({
       <div className="flex justify-end gap-3">
         <div className="flex flex-col space-y-2 items-end max-w-xs">
           <div className="rounded-2xl flex flex-col p-4 bg-blue-50 border border-blue-100">
-            <div className="items-center gap-2 mb-2">
-              <div className="flex items-center gap-2">
+            <div className=" flex flex-col ">
+              <div className="flex gap-2">
                 <div className="w-7 h-7 rounded-full bg-[#3652AD] flex items-center justify-center">
                   <img src='/accepted.png' width={14} height={14}/>
                 </div>
-                <p className="text-sm text-gray-600 font-medium">You sent an offer</p>
-              </div>
-              <span className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <div>
+                <p className="text-sm text-gray-600 font-medium">You sent an offer of</p>
+                <span className="text-sm font-bold text-gray-900">
                 ₦{message.offer?.amount?.toLocaleString()}
-              </span>
+                </span>
+                </div>
+                </div>
+                
             </div>
 
             {isAccepted && (
@@ -49,13 +52,44 @@ export default function OfferSentMessage({
               </div>
             )}
           </div>
-          <p className="text-xs text-gray-500">
+           <div className="flex items-center gap-1 mt-1">
+          <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
+            </svg>
+            {/* <svg className="w-4 h-4 text-gray-400 -ml-2" viewBox="0 0 24 24" fill="none">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
+            </svg> */}
+          <p className="text-xs text-gray-500 ml-1">
+              {(() => {
+                const msgDate = new Date(message.createdAt);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                const isToday = msgDate.toDateString() === today.toDateString();
+                const isYesterday = msgDate.toDateString() === yesterday.toDateString();
+                
+                let dateStr = '';
+                if (isToday) {
+                  dateStr = 'Today';
+                } else if (isYesterday) {
+                  dateStr = 'Yesterday';
+                } else {
+                  dateStr = msgDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }
+                
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `${dateStr} ${timeStr}`;
+              })()}
+            </p>
+          {/* <p className="text-xs text-gray-500">
             {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
+          </p> */}
+        </div>
         </div>
         
         {/* User's profile picture for own messages */}
-        <div className="flex-shrink-0">
+        {/* <div className="flex-shrink-0">
           {message.sender.profilePic ? (
             <img 
               src={message.sender.profilePic} 
@@ -67,7 +101,7 @@ export default function OfferSentMessage({
               {message.sender.firstName?.[0]}{message.sender.lastName?.[0]}
             </div>
           )}
-        </div>
+        </div> */}
       </div>
     );
   }

@@ -47,17 +47,43 @@ export default function RegularMessage({
           </p>
         </div>
         <div className="flex items-center gap-1 mt-1">
-          <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-xs text-gray-500">
+          <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
+            </svg>
+            {/* <svg className="w-4 h-4 text-gray-400 -ml-2" viewBox="0 0 24 24" fill="none">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
+            </svg> */}
+          <p className="text-xs text-gray-500 ml-1">
+              {(() => {
+                const msgDate = new Date(message.createdAt);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                const isToday = msgDate.toDateString() === today.toDateString();
+                const isYesterday = msgDate.toDateString() === yesterday.toDateString();
+                
+                let dateStr = '';
+                if (isToday) {
+                  dateStr = 'Today';
+                } else if (isYesterday) {
+                  dateStr = 'Yesterday';
+                } else {
+                  dateStr = msgDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }
+                
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `${dateStr} ${timeStr}`;
+              })()}
+            </p>
+          {/* <p className="text-xs text-gray-500">
             {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
+          </p> */}
         </div>
       </div>
 
       {/* Show profile picture for user's own messages on the right side */}
-      {isUserMessage && (
+      {/* {isUserMessage && (
         <div className="flex-shrink-0">
           {message.sender.profilePic ? (
             <img 
@@ -71,7 +97,7 @@ export default function RegularMessage({
             </div>
           )}
         </div>
-      )}
+      )} */}
     </div>
   );
 }
