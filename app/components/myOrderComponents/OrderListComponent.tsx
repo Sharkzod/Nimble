@@ -65,74 +65,79 @@ export default function OrdersList({
 
   // Transform chats to orders format
   const transformChatsToOrders = (chats: Chat[], tab: OrderTab): Order[] => {
-    const currentUserId = getCurrentUserId();
-    console.log('Current user ID:', currentUserId);
+  const currentUserId = getCurrentUserId();
+  console.log('Current user ID:', currentUserId);
 
-    if (!currentUserId) {
-      console.warn('No current user ID found');
-      return [];
+  if (!currentUserId) {
+    console.warn('No current user ID found');
+    return [];
+  }
+
+  // Filter chats based on active tab
+  const filteredChats = chats.filter(chat => {
+    // Skip chats where buyer or seller is null
+    if (!chat.buyer || !chat.seller) {
+      console.warn('Skipping chat with missing buyer/seller:', chat._id);
+      return false;
     }
 
-    // Filter chats based on active tab
-    const filteredChats = chats.filter(chat => {
-      // Skip chats where buyer or seller is null
-      if (!chat.buyer || !chat.seller) {
-        console.warn('Skipping chat with missing buyer/seller:', chat._id);
-        return false;
-      }
+    if (tab === 'incoming') {
+      // Show chats where current user is the seller (incoming orders)
+      return chat.seller._id === currentUserId;
+    } else {
+      // Show chats where current user is the buyer (my orders)
+      return chat.buyer._id === currentUserId;
+    }
+  });
 
-      if (tab === 'incoming') {
-        // Show chats where current user is the seller (incoming orders)
-        return chat.seller._id === currentUserId;
-      } else {
-        // Show chats where current user is the buyer (my orders)
-        return chat.buyer._id === currentUserId;
-      }
-    });
+  console.log(`Filtered chats for ${tab}:`, filteredChats.length);
 
-    console.log(`Filtered chats for ${tab}:`, filteredChats.length);
+  // Sort chats by lastMessageSentAt or updatedAt in descending order (recent first)
+  const sortedChats = filteredChats.sort((a, b) => {
+    const timeA = new Date(a.lastMessageSentAt || a.updatedAt).getTime();
+    const timeB = new Date(b.lastMessageSentAt || b.updatedAt).getTime();
+    return timeB - timeA; // Descending order (recent first)
+  });
 
-    // Sort chats by lastMessageSentAt or updatedAt in descending order (recent first)
-    const sortedChats = filteredChats.sort((a, b) => {
-      const timeA = new Date(a.lastMessageSentAt || a.updatedAt).getTime();
-      const timeB = new Date(b.lastMessageSentAt || b.updatedAt).getTime();
-      return timeB - timeA; // Descending order (recent first)
-    });
+  console.log('Sorted chats (recent first):', sortedChats.map(chat => ({
+    id: chat._id,
+    time: chat.lastMessageSentAt || chat.updatedAt,
+    lastMessage: chat.lastMessage
+  })));
 
-    console.log('Sorted chats (recent first):', sortedChats.map(chat => ({
+  // Transform chats to orders, filtering out nulls
+  const orders: Order[] = [];
+  
+  for (const chat of sortedChats) {
+    // Add null checks here as well for safety
+    const isBuyer = chat.buyer?._id === currentUserId;
+    const otherUser = isBuyer ? chat.seller : chat.buyer;
+    
+    // Ensure otherUser exists before accessing properties
+    if (!otherUser) {
+      console.warn('Skipping chat with missing other user:', chat._id);
+      continue; // Skip this chat
+    }
+
+    // Determine status based on chat properties and last message
+    const status = determineOrderStatus(chat, isBuyer);
+    
+    orders.push({
       id: chat._id,
-      time: chat.lastMessageSentAt || chat.updatedAt,
-      lastMessage: chat.lastMessage
-    })));
+      chatId: chat._id,
+      customerName: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || 'Unknown User',
+      customerAvatar: otherUser.profilePic,
+      productName: chat.product?.name || 'Product',
+      productImage: chat.product?.images?.[0],
+      amount: chat.product?.price || 0,
+      time: formatTime(chat.lastMessageSentAt || chat.updatedAt),
+      status: status,
+      originalChat: chat
+    });
+  }
 
-    return sortedChats.map(chat => {
-      // Add null checks here as well for safety
-      const isBuyer = chat.buyer?._id === currentUserId;
-      const otherUser = isBuyer ? chat.seller : chat.buyer;
-      
-      // Ensure otherUser exists before accessing properties
-      if (!otherUser) {
-        console.warn('Skipping chat with missing other user:', chat._id);
-        return null;
-      }
-
-      // Determine status based on chat properties and last message
-      const status = determineOrderStatus(chat, isBuyer);
-      
-      return {
-        id: chat._id,
-        chatId: chat._id,
-        customerName: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim() || 'Unknown User',
-        customerAvatar: otherUser.profilePic,
-        productName: chat.product?.name || 'Product',
-        productImage: chat.product?.images?.[0],
-        amount: chat.product?.price || 0,
-        time: formatTime(chat.lastMessageSentAt || chat.updatedAt),
-        status: status,
-        originalChat: chat
-      };
-    }).filter((order): order is Order => order !== null); // Filter out null orders
-  };
+  return orders;
+};
 
   // Determine order status based on chat
   const determineOrderStatus = (chat: Chat, isBuyer: boolean): OrderStatus => {
