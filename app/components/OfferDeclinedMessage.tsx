@@ -1,6 +1,5 @@
 // components/OfferDeclinedMessage.tsx
 
-
 interface Message {
   _id: string;
   sender: {
@@ -15,15 +14,12 @@ interface Message {
   createdAt: string | Date;
 }
 
-
 interface OfferDeclinedMessageProps {
   message: Message;
   currentUserId: string;
   onAcceptBestPrice?: (message: Message) => void;
   onDeclineBestPrice?: (message: Message) => void;
 }
-
-
 
 export function OfferDeclinedMessage({ 
   message, 
@@ -51,7 +47,7 @@ export function OfferDeclinedMessage({
             <div className="mt-2">
               <p className="text-sm text-gray-600">Best price offered:</p>
               <p className="text-lg font-bold text-gray-900">
-                ₦{message.offer.bestPrice.toLocaleString()}
+                ₦{message.offer!.bestPrice!.toLocaleString()}
               </p>
             </div>
           )}
@@ -92,7 +88,7 @@ export function OfferDeclinedMessage({
               </p>
               {hasBestPrice && (
                 <p className="text-lg font-bold text-gray-900 mt-1">
-                  Best price: ₦{message.offer.bestPrice.toLocaleString()}
+                  Best price: ₦{message.offer!.bestPrice!.toLocaleString()}
                 </p>
               )}
             </div>
