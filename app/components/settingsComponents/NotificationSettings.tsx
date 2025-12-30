@@ -177,7 +177,7 @@ export default function NotificationSettings({
       showFullLayout={showFullLayout}
       onSave={handleSave}
       onCancel={handleCancel}
-      isSaveDisabled={!hasChanges || isLoading}
+      // isSaveDisabled={!hasChanges || isLoading}
       showActionButtons={false}
     >
       <div className="flex flex-col">
