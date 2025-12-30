@@ -315,7 +315,7 @@ export default function PersonalDetails({
 
       // If no changes, return
       if (Object.keys(updateData).length === 0) {
-        toast.info('No changes to save');
+        toast('No changes to save');
         setIsEditing(false);
         return;
       }
