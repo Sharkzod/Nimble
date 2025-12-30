@@ -1,10 +1,29 @@
 // components/OfferDeclinedMessage.tsx
+
+
+interface Message {
+  _id: string;
+  sender: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePic?: string;
+  };
+  offer?: {
+    bestPrice?: number;
+  };
+  createdAt: string | Date;
+}
+
+
 interface OfferDeclinedMessageProps {
   message: Message;
   currentUserId: string;
   onAcceptBestPrice?: (message: Message) => void;
   onDeclineBestPrice?: (message: Message) => void;
 }
+
+
 
 export function OfferDeclinedMessage({ 
   message, 
