@@ -17,7 +17,7 @@ const BottomNavigation: React.FC = () => {
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'feed', label: 'Feed', icon: FileText, href: '/feed' },
     { id: 'requests', label: 'Requests', icon: HelpCircle, href: '/requests' },
-    { id: 'sell', label: 'Sell', icon: Plus, href: '/sell' },
+    { id: 'sell', label: 'Sell', icon: Plus, href: '/dashboard/my-listings/create-listing' },
     { id: 'messages', label: 'Messages', icon: MessageSquare, href: '/dashboard/message' },
     { id: 'account', label: 'Account', icon: User, href: '/dashboard/user' },
   ];
