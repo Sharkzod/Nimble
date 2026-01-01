@@ -27,7 +27,7 @@ export const useSendMessage = () => {
 
       const token = localStorage.getItem('authToken');
       
-      const response = await fetch(`http://localhost:4000/api/chats/messages/`, {
+      const response = await fetch(`https://nimble-backend-qfg0.onrender.com/chats/messages/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
