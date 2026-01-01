@@ -1141,7 +1141,7 @@ const handleSubmitDeclineWithBestPrice = async (data: { bestPrice: number }) => 
         proposedBy: offerToDecline.sender._id,
         initialOfferMessageId: offerToDecline._id,
         bestPrice: data.bestPrice
-      }
+      } as any // Add type assertion to fix TypeScript error
     });
 
     // Replace temp message with actual server response
