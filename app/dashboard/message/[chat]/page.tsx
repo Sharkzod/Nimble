@@ -969,6 +969,11 @@ const handleAcceptCounterOffer = (offerMessage: Message) => {
  // Fixed handleSubmitOffer - Messages show immediately
 const handleSubmitOffer = async (offerData: { amount: number }) => {
   if (!chatId || !currentUser) return;
+
+  if (!currentUser._id) {
+  console.error('Current user ID is undefined');
+  return;
+}
   
   const tempOfferMessage: Message = {
     _id: `temp-offer-${Date.now()}`,
