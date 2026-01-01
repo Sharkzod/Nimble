@@ -987,7 +987,7 @@ const handleSubmitOffer = async (offerData: { amount: number }) => {
       status: 'sent',
       proposedBy: currentUser._id
     },
-    readBy: [currentUser._id],
+    readBy: [currentUser._id!],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -1388,7 +1388,7 @@ const handleSubmitInvoice = async (invoiceData: {
           price: price
         }]
       },
-      readBy: [currentUser._id],
+      readBy: [currentUser._id!],
       createdAt: savedInvoice.createdAt || new Date().toISOString(),
       updatedAt: savedInvoice.updatedAt || new Date().toISOString()
     };
