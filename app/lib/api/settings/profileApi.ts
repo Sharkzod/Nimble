@@ -61,6 +61,7 @@ export interface DeliveryAddressResponse {
   data?: {
     deliveryAddresses: DeliveryAddress[];
   };
+  error?: string;
 }
 
 export interface ApiResponse<T = any> {
