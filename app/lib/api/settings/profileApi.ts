@@ -93,7 +93,7 @@ export interface WithdrawalResponse {
   error?: string;
 }
 
-export type NotificationSetting = string | {
+export type NotificationSetting = {
   type: string;
   enabled: boolean;
   _id?: string;
@@ -502,8 +502,8 @@ updateEmailNotifications: async (updatedNotifications: NotificationSetting[]): P
     
     // Convert array of objects to array of enabled notification types (strings)
     const enabledNotifications = updatedNotifications
-      .filter(setting => setting.enabled)
-      .map(setting => setting.type);
+  .filter(setting => setting.enabled)
+  .map(setting => setting.type);
     
     console.log('📤 Converted to strings:', enabledNotifications);
     
@@ -539,8 +539,8 @@ updateInAppNotifications: async (updatedNotifications: NotificationSetting[]): P
     
     // Convert array of objects to array of enabled notification types (strings)
     const enabledNotifications = updatedNotifications
-      .filter(setting => setting.enabled)
-      .map(setting => setting.type);
+  .filter(setting => setting.enabled)
+  .map(setting => setting.type);
     
     console.log('📤 Converted to strings:', enabledNotifications);
     
