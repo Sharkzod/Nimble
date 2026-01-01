@@ -1257,8 +1257,8 @@ const handleSubmitInvoice = async (invoiceData: {
 }) => {
   console.log('🔍 handleSubmitInvoice RECEIVED FULL DATA:', invoiceData);
   
-  if (!chatId || !currentUser) {
-    console.log('❌ Missing chatId or currentUser');
+  if (!chatId || !currentUser || !currentUser._id) { // ← Add check for currentUser._id
+    console.log('❌ Missing chatId or currentUser or currentUser._id');
     return;
   }
 
@@ -1292,7 +1292,7 @@ const handleSubmitInvoice = async (invoiceData: {
     tempId: `temp-invoice-${Date.now()}`,
     chat: chatId,
     sender: {
-      _id: currentUser._id,
+      _id: currentUser._id, // ← Now TypeScript knows this is not undefined
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
       profilePic: currentUser.profilePic
