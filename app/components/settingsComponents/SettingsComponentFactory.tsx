@@ -16,6 +16,7 @@ interface SettingsComponentFactoryProps {
   showActionButtons?: boolean;
   onSave?: () => void;
   onCancel?: () => void;
+  isSaveDisabled?: boolean;
 }
 
 export default function SettingsComponentFactory({
