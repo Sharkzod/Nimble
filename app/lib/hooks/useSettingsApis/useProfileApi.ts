@@ -43,6 +43,7 @@ export const useProfileApi = () => {
   }, []);
 
   // Get business profile
+    // Get business profile
   const getBusinessProfile = useCallback(async (): Promise<UpdateBusinessProfileResponse> => {
     setLoading(true);
     setError(null);
@@ -68,7 +69,29 @@ export const useProfileApi = () => {
         setBusinessProfile(transformedProfile);
       } else if (response.success && response.data) {
         // Handle case where data is directly in response
-        setBusinessProfile(response.data);
+        const data = response.data as any;
+        
+        // Check if data has businessDetails structure
+        if (data.businessName || data.businessInformation || data.address) {
+          const transformedProfile: UserBusinessProfile = {
+            businessName: data.businessName || '',
+            businessInformation: data.businessInformation || '',
+            address: data.address || '',
+            city: data.city || '',
+            state: data.state || '',
+            _id: data._id,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt
+          };
+          
+          setBusinessProfile(transformedProfile);
+        } else {
+          // If data doesn't match expected structure, set to null
+          setBusinessProfile(null);
+        }
+      } else {
+        // No business profile data found
+        setBusinessProfile(null);
       }
       
       setLoading(false);
