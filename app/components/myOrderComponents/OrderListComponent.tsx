@@ -276,7 +276,7 @@ export default function OrdersList({
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
-    router.push('/auth/login');
+    router.push('/login');
     return null;
   }
 

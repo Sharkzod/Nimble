@@ -1499,7 +1499,7 @@ const parseInvoiceDetails = (description: string) => {
   }
 
   if (!isAuthenticated) {
-    router.push('/auth/login');
+    router.push('/login');
     return null;
   }
 
