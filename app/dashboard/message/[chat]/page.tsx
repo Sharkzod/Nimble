@@ -1093,7 +1093,7 @@ const handleSubmitDeclineWithBestPrice = async (data: { bestPrice: number }) => 
     tempId: `temp-decline-${Date.now()}`,
     chat: chatId,
     sender: {
-      _id: currentUser._id,
+      _id: currentUser._id!,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
       profilePic: currentUser.profilePic
@@ -1107,7 +1107,7 @@ const handleSubmitDeclineWithBestPrice = async (data: { bestPrice: number }) => 
       initialOfferMessageId: selectedOfferToDecline._id,
       bestPrice: data.bestPrice
     },
-    readBy: [currentUser._id],
+    readBy: [currentUser._id!],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -1212,14 +1212,14 @@ const handleSubmitDeclineWithBestPrice = async (data: { bestPrice: number }) => 
     tempId: `temp-${Date.now()}`,
     chat: chatId,
     sender: {
-      _id: currentUser._id,
+      _id: currentUser._id!,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
       profilePic: currentUser.profilePic
     },
     text: messageText,
     type: 'text',
-    readBy: [currentUser._id],
+    readBy: [currentUser._id!],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -1292,7 +1292,7 @@ const handleSubmitInvoice = async (invoiceData: {
     tempId: `temp-invoice-${Date.now()}`,
     chat: chatId,
     sender: {
-      _id: currentUser._id, // ← Now TypeScript knows this is not undefined
+      _id: currentUser._id!, // ← Now TypeScript knows this is not undefined
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
       profilePic: currentUser.profilePic
@@ -1314,7 +1314,7 @@ const handleSubmitInvoice = async (invoiceData: {
         price: price
       }]
     },
-    readBy: [currentUser._id],
+    readBy: [currentUser._id!],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
