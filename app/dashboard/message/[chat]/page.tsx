@@ -68,6 +68,8 @@ interface User {
   firstName: string;
   lastName: string;
   profilePic?: string;
+  avatar?: string;
+  
 }
 
 interface Product {
@@ -976,7 +978,7 @@ const handleSubmitOffer = async (offerData: { amount: number }) => {
       _id: currentUser._id!,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
-      profilePic: currentUser.profilePic
+      profilePic: currentUser.avatar 
     },
     text: '',
     type: 'offer',
@@ -1096,7 +1098,7 @@ const handleSubmitDeclineWithBestPrice = async (data: { bestPrice: number }) => 
       _id: currentUser._id!,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
-      profilePic: currentUser.profilePic
+      profilePic: currentUser.avatar 
     },
     text: '',
     type: 'offer',
@@ -1215,7 +1217,7 @@ const handleSubmitDeclineWithBestPrice = async (data: { bestPrice: number }) => 
       _id: currentUser._id!,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
-      profilePic: currentUser.profilePic
+      profilePic: currentUser.avatar
     },
     text: messageText,
     type: 'text',
@@ -1295,7 +1297,7 @@ const handleSubmitInvoice = async (invoiceData: {
       _id: currentUser._id!, // ← Now TypeScript knows this is not undefined
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
-      profilePic: currentUser.profilePic
+      profilePic: currentUser.avatar 
     },
     text: invoiceData.description || '',
     type: 'invoice',
@@ -1367,7 +1369,7 @@ const handleSubmitInvoice = async (invoiceData: {
         _id: currentUser._id!,
         firstName: currentUser.firstName,
         lastName: currentUser.lastName,
-        profilePic: currentUser.profilePic
+        profilePic: currentUser.avatar
       },
       text: invoiceData.description || '',
       type: 'invoice',
