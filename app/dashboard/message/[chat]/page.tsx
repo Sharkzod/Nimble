@@ -826,19 +826,24 @@ const handlePayInvoice = async (invoiceMessage: Message) => {
     return;
   }
 
-  // Update invoice status optimistically
+  // Update invoice status optimistically - FIXED VERSION
   setLocalMessages(prev =>
-    prev.map(msg =>
-      msg._id === invoiceMessage._id
-        ? {
-            ...msg,
-            invoice: {
-              ...msg.invoice,
-              status: 'paid'
-            }
-          }
-        : msg
-    )
+    prev.map(msg => {
+      if (msg._id !== invoiceMessage._id) return msg;
+      
+      // Create a safe updated invoice object
+      const currentInvoice = msg.invoice;
+      if (!currentInvoice) return msg;
+      
+      return {
+        ...msg,
+        invoice: {
+          ...currentInvoice,
+          amount: currentInvoice.amount || 0, // Ensure amount is always a number
+          status: 'paid' as const
+        }
+      };
+    })
   );
 
   try {
@@ -863,17 +868,21 @@ const handlePayInvoice = async (invoiceMessage: Message) => {
     console.error('❌ Error processing payment:', error);
     // Revert optimistic update
     setLocalMessages(prev =>
-      prev.map(msg =>
-        msg._id === invoiceMessage._id
-          ? {
-              ...msg,
-              invoice: {
-                ...msg.invoice,
-                status: 'pending'
-              }
-            }
-          : msg
-      )
+      prev.map(msg => {
+        if (msg._id !== invoiceMessage._id) return msg;
+        
+        const currentInvoice = msg.invoice;
+        if (!currentInvoice) return msg;
+        
+        return {
+          ...msg,
+          invoice: {
+            ...currentInvoice,
+            amount: currentInvoice.amount || 0,
+            status: 'pending' as const
+          }
+        };
+      })
     );
     alert('Failed to process payment. Please try again.');
   }
@@ -890,19 +899,23 @@ const handleDeclineInvoice = async (invoiceMessage: Message) => {
   }
 
   if (confirm('Are you sure you want to decline this invoice?')) {
-    // Update invoice status optimistically
+    // Update invoice status optimistically - FIXED VERSION
     setLocalMessages(prev =>
-      prev.map(msg =>
-        msg._id === invoiceMessage._id
-          ? {
-              ...msg,
-              invoice: {
-                ...msg.invoice,
-                status: 'cancelled'
-              }
-            }
-          : msg
-      )
+      prev.map(msg => {
+        if (msg._id !== invoiceMessage._id) return msg;
+        
+        const currentInvoice = msg.invoice;
+        if (!currentInvoice) return msg;
+        
+        return {
+          ...msg,
+          invoice: {
+            ...currentInvoice,
+            amount: currentInvoice.amount || 0,
+            status: 'cancelled' as const
+          }
+        };
+      })
     );
 
     try {
@@ -918,17 +931,21 @@ const handleDeclineInvoice = async (invoiceMessage: Message) => {
       console.error('❌ Error declining invoice:', error);
       // Revert optimistic update
       setLocalMessages(prev =>
-        prev.map(msg =>
-          msg._id === invoiceMessage._id
-            ? {
-                ...msg,
-                invoice: {
-                  ...msg.invoice,
-                  status: 'pending'
-                }
-              }
-            : msg
-        )
+        prev.map(msg => {
+          if (msg._id !== invoiceMessage._id) return msg;
+          
+          const currentInvoice = msg.invoice;
+          if (!currentInvoice) return msg;
+          
+          return {
+            ...msg,
+            invoice: {
+              ...currentInvoice,
+              amount: currentInvoice.amount || 0,
+              status: 'pending' as const
+            }
+          };
+        })
       );
       alert('Failed to decline invoice. Please try again.');
     }
