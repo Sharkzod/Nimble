@@ -1508,15 +1508,17 @@ const parseInvoiceDetails = (description: string) => {
   }
 
   if (error || !chat) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen p-4">
-        <div className="text-lg text-red-500 mb-4">{error?.message || 'Chat not found'}</div>
-        <button onClick={() => router.push('/dashboard/message')} className="px-4 py-2 bg-blue-500 text-white rounded">
-          Back to Messages
-        </button>
+  return (
+    <div className="flex flex-col items-center justify-center h-screen p-4">
+      <div className="text-lg text-red-500 mb-4">
+        {typeof error === 'string' ? error : error?.message || 'Chat not found'}
       </div>
-    );
-  }
+      <button onClick={() => router.push('/dashboard/message')} className="px-4 py-2 bg-blue-500 text-white rounded">
+        Back to Messages
+      </button>
+    </div>
+  );
+}
 
   return (
     <div className="flex flex-col h-screen bg-white">
