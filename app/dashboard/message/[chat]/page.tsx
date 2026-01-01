@@ -973,7 +973,7 @@ const handleSubmitOffer = async (offerData: { amount: number }) => {
     tempId: `temp-offer-${Date.now()}`,
     chat: chatId,
     sender: {
-      _id: currentUser._id,
+      _id: currentUser._id!,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
       profilePic: currentUser.profilePic
@@ -1364,7 +1364,7 @@ const handleSubmitInvoice = async (invoiceData: {
       chatId: savedInvoice.chatId || chatId,
       chat: savedInvoice.chat || chatId,
       sender: {
-        _id: currentUser._id,
+        _id: currentUser._id!,
         firstName: currentUser.firstName,
         lastName: currentUser.lastName,
         profilePic: currentUser.profilePic
