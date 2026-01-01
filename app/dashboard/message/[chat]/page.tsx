@@ -22,6 +22,7 @@ import InvoiceMessage from '@/app/components/chatComponents/InvoiceMessage';
 
 // Define Message interface
 // Update the Message interface
+// Update the invoice interface in the Message interface
 interface Message {
   _id: string;
   chatId?: string;
@@ -53,6 +54,10 @@ interface Message {
       price: number;
     }>;
     notes?: string;
+    subtotal?: number; // Add this
+    deliveryFee?: number; // Add this
+    commission?: number; // Add this
+    youReceive?: number; // Add this
   };
   payment?: any;
   extraCharge?: any;
@@ -1350,7 +1355,7 @@ const handleSubmitInvoice = async (invoiceData: {
           quantity: quantity,
           price: price
         }]
-      }
+      } as any // Add type assertion
     });
     
     console.log('📡 Raw server response:', JSON.stringify(savedInvoice, null, 2));
