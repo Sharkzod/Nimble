@@ -76,7 +76,7 @@ export const useChat = (chatId: string | null): UseChatReturn => {
         throw new Error('No authentication token found');
       }
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const backendUrl = 'https://nimble-backend-qfg0.onrender.com';
       
       console.log(`📡 Making request to: ${backendUrl}/api/chats/${chatId}`);
       

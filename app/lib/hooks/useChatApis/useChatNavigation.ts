@@ -33,7 +33,7 @@ export const useChatNavigation = () => {
       console.log('🚀 Starting chat navigation with params:', params);
       console.log('🔐 Auth token:', authToken ? '✓ Present' : '✗ Missing');
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const backendUrl = 'https://nimble-backend-qfg0.onrender.com';
 
       const response = await fetch(`${backendUrl}/api/chats/`, {
         method: 'POST',
