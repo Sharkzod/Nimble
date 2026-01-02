@@ -154,7 +154,7 @@ const transformProduct = (product: any): TransformedProduct => {
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
       {/* Section Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Most purchased</h2>
+        <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Most purchased</h2>
         {loading && (
           <RefreshCw className="w-5 h-5 text-gray-500 animate-spin" />
         )}

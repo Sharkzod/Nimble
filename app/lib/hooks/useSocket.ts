@@ -6,7 +6,10 @@ export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const socketInstance = io('https://nimble-backend-qfg0.onrender.com', {
+    const socketInstance = io(
+      'http://localhost:4000',
+      // 'https://nimble-backend-qfg0.onrender.com',
+      {
       withCredentials: true,
       auth: {
         token: localStorage.getItem('authToken')
