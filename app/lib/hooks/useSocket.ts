@@ -7,8 +7,8 @@ export const useSocket = () => {
 
   useEffect(() => {
     const socketInstance = io(
-      // 'http://localhost:4000',
-      'https://nimble-backend-qfg0.onrender.com',
+      'http://localhost:4000',
+      // 'https://nimble-backend-qfg0.onrender.com',
       {
       withCredentials: true,
       auth: {

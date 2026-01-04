@@ -47,7 +47,7 @@ const categories = [
 
 const cities = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Benin City', 'Kaduna'];
 const states = ['Lagos', 'Abuja FCT', 'Rivers', 'Kano', 'Oyo', 'Edo', 'Kaduna'];
-const conditions = ['New', 'Like New', 'Good', 'Fair', 'For Parts'];
+const conditions = ['Condition','New', 'Like New', 'Good', 'Fair', 'For Parts'];
 const countries = ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'United States', 'United Kingdom'];
 const deliveryLocations = ['Lagos', 'Abuja', 'Port Harcourt', 'Nationwide'];
 const scopes = ['Nationwide', 'State-wide', 'City-only'];
@@ -384,38 +384,7 @@ export default function PostItemPage() {
         {/* Choose Categories Section */}
         <div className="p-4 w-[90%] mx-auto bg-white rounded-2xl border border-gray-200">
           {/* Category Dropdown */}
-          <div className="mb-6" ref={categoryRef}>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <span className={category ? 'text-gray-900' : 'text-gray-500'}>
-                  {category || 'Choose category'}
-                </span>
-                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showCategoryDropdown && (
-                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => {
-                        setCategory(cat);
-                        setShowCategoryDropdown(false);
-                      }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          
 
           {/* Image Upload */}
           <div className="mb-6">
@@ -459,7 +428,41 @@ export default function PostItemPage() {
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+          <div className="mb-6" ref={categoryRef}>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <span className={category ? 'text-gray-900' : 'text-gray-500'}>
+                  {category || 'Choose category'}
+                </span>
+                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showCategoryDropdown && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => {
+                        setCategory(cat);
+                        setShowCategoryDropdown(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        
 
         {/* Basic Product Information */}
         <div className="p-4 w-[90%] mx-auto bg-white rounded-2xl border border-gray-200 space-y-4">
@@ -588,7 +591,7 @@ export default function PostItemPage() {
           </div>
 
           {/* Price */}
-          <div>
+          {/* <div>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-900 font-medium">₦</div>
               <input
@@ -599,10 +602,10 @@ export default function PostItemPage() {
                 className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Commission Calculation */}
-          {price && (
+          {/* {price && (
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-100 rounded-lg p-4">
                 <div className="text-sm text-gray-600 mb-1">Commission: 10%</div>
@@ -619,10 +622,10 @@ export default function PostItemPage() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Bulk Pricing */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             {bulkPrices.map((bulk, index) => (
               <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
                 {editingBulkIndex === index ? (
@@ -701,7 +704,7 @@ export default function PostItemPage() {
               </div>
               Add Bulk price
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Warranty Section */}

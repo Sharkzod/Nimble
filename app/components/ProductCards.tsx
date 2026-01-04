@@ -120,8 +120,8 @@ const ProductsGridComponent: React.FC = () => {
         key={index}
         className={`w-3 h-3 ${
           index < rating
-            ? 'fill-yellow-400 text-yellow-400'
-            : 'text-gray-300'
+            ? 'fill-black text-black'
+            : 'text-black'
         }`}
       />
     ));
@@ -130,6 +130,8 @@ const ProductsGridComponent: React.FC = () => {
   const handleProductClick = (productId: string) => {
     console.log('Product clicked:', productId);
   };
+
+  
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6">
@@ -157,19 +159,19 @@ const ProductsGridComponent: React.FC = () => {
 
       {/* Products Grid */}
       {activeTab === 'products' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
           {products.map((product) => (
             <div
               key={product.id}
-              className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer group border border-gray-100"
+              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer group"
               onClick={() => handleProductClick(product.id)}
             >
               {/* Product Image */}
-              <div className="relative aspect-square bg-gray-100">
+              <div className="relative bg-gray-100">
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  className="w-full h-[full] object-cover rounded-lg"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTEyLjVIMTc1VjE4Ny41SDEyNVYxMTIuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
@@ -177,38 +179,44 @@ const ProductsGridComponent: React.FC = () => {
                 />
                 
                 {/* Wishlist Button */}
+                
+              </div>
+
+              {/* Product Info */}
+              <div className="p-3">
+                {/* Rating */}
+                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-0.5 mb-2">
+                  {renderStars(product.rating, product.maxRating)}
+                </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleWishlist(product.id);
                   }}
-                  className="absolute top-3 right-3 p-2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full transition-colors duration-200 shadow-sm"
+                  className="p-1.5 bg-white rounded-full transition-colors duration-200"
                 >
                   <Heart
                     className={`w-4 h-4 ${
                       product.isWishlisted
                         ? 'fill-red-500 text-red-500'
-                        : 'text-gray-600 hover:text-red-500'
+                        : 'text-gray-700'
                     }`}
                   />
                 </button>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-4">
-                {/* Rating */}
-                <div className="flex items-center gap-1 mb-3">
-                  {renderStars(product.rating, product.maxRating)}
                 </div>
 
                 {/* Product Name */}
-                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 leading-relaxed">
-                  {product.name}
-                </h3>
+                <h3 className="text-sm font-normal text-gray-900 mb-1">
+  {product.name.length > 50 
+    ? `${product.name.substring(0, 50)}...`
+    : product.name
+  }
+</h3>
 
                 {/* Price */}
-                <div className="mb-2">
-                  <span className="text-lg font-bold text-gray-900">
+                <div className="mb-1">
+                  <span className="text-base font-bold text-gray-900">
                     {formatPrice(product.price)}
                   </span>
                 </div>

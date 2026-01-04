@@ -217,111 +217,58 @@ const SellRate: React.FC = () => {
   return (
     <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 bg-white rounded-lg mt-0 sm:mt-5">
       {/* Mobile Layout */}
+      
+      {/* Mobile Layout */}
       <div className="lg:hidden space-y-6">
         {/* User Info Section */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            {/* User Avatar */}
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-black rounded-full flex items-center justify-center flex-shrink-0">
-              {userInfo.avatar ? (
-                <img 
-                  src={userInfo.avatar} 
-                  alt={userInfo.name}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-white font-semibold text-xs sm:text-sm">
-                  {userInfo.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                </span>
-              )}
+        <div className="flex items-start gap-3">
+          {/* User Avatar */}
+          <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center flex-shrink-0">
+            {userInfo.avatar ? (
+              <img 
+                src={userInfo.avatar} 
+                alt={userInfo.name}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-white font-semibold text-base">
+                {userInfo.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </span>
+            )}
+          </div>
+          
+          {/* User Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className='flex gap-5'>
+              <h3 className="font-semibold text-gray-900 text-base ">
+                {userInfo.displayName}
+              </h3>
+              <span className="text-xs text-[#66B584] bg-[#66B5844D] rounded-[100px] px-2 py-1 ">
+                Verified ID
+              </span>
+              </div>
+              {/* {userInfo.isVerified && (
+                <div className="bg-green-500 rounded-full p-0.5 flex-shrink-0">
+                  <CheckCircle className="w-3.5 h-3.5 text-white" fill="currentColor" />
+                </div>
+              )} */}
             </div>
             
-            {/* User Details */}
-            <div className="min-w-0">
-              <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
-                  {userInfo.displayName}
-                </h3>
-                {userInfo.isVerified && (
-                  <div className="bg-green-500 rounded-full p-0.5 flex-shrink-0">
-                    <CheckCircle className="w-3 h-3 text-white" fill="currentColor" />
-                  </div>
-                )}
-                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded flex-shrink-0">
-                  Verified ID
-                </span>
-              </div>
-              <div className="flex items-center text-gray-500 text-xs sm:text-sm">
-                <MapPin className="w-3 h-3 mr-1" />
-                {userInfo.location}
-              </div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm text-gray-700">100 following</span>
+              <span className="text-gray-400">•</span>
+              
+               <div className="flex items-center text-gray-500 text-sm">
+              <MapPin className="w-3.5 h-3.5 mr-1" />
+              {userInfo.location}
             </div>
+            </div>
+            
+           
           </div>
-
-          {/* Follow Button - Mobile */}
-          {/* <button
-            onClick={toggleFollow}
-            className={`px-4 py-2 rounded-full text-xs font-medium transition-colors duration-200 flex-shrink-0 ${
-              isFollowing
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </button> */}
         </div>
-
-        {/* Overall Rating - Mobile */}
-        <div className="flex items-center w-full justify-between border-t border-b border-gray-200 py-4">
-          <div className="text-center w-[20%]">
-            <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-              {ratingData.overallRating.toFixed(1)}
-            </div>
-            <div className="flex items-center justify-center gap-0.5 mb-1">
-              {renderStars(ratingData.overallRating, 5, 'sm')}
-            </div>
-            <p className="text-xs text-gray-500">{ratingData.totalRatings} ratings</p>
-          </div>
-
-            {ratingData.ratingBreakdown.length > 0 && (
-          <div className="space-y-2 w-[65%]">
-            <h4 className="font-semibold text-gray-900 text-sm mb-3">Rating Breakdown</h4>
-            {ratingData.ratingBreakdown.map((rating) => (
-              <div key={rating.stars} className="flex items-center gap-2 text-xs">
-                {/* Star Rating */}
-                <div className="flex items-center gap-0.5 w-10 sm:w-12">
-                  <span className="text-gray-600 w-3">{rating.stars}</span>
-                  <Star className="w-3 h-3 text-[#3652AD] fill-[#3652AD]" />
-                </div>
-                
-                {/* Progress Bar */}
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-[#3652AD] h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${rating.percentage}%` }}
-                  />
-                </div>
-                
-                {/* Count */}
-                <span className="text-gray-500 w-6 text-right text-xs">{rating.count}</span>
-              </div>
-            ))}
-          </div>
-        )}
-          {/* Additional Stats */}
-          {/* {vendorStats && (
-            <div className="text-center">
-              <div className="text-sm font-semibold text-gray-900">
-                {vendorStats.totalSales}+ sales
-              </div>
-              <p className="text-xs text-gray-500">{vendorStats.responseRate}% response rate</p>
-            </div>
-          )} */}
         </div>
-
-        {/* Rating Breakdown - Mobile */}
-        
-      </div>
 
       {/* Desktop Layout */}
       <div className="hidden lg:flex items-center justify-between gap-4 xl:gap-6">
