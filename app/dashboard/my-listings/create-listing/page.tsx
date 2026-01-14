@@ -336,7 +336,7 @@ export default function PostItemPage() {
         category: categoryId, // Send category ID
         isNegotiable: isNegotiable,
         isShippedFromAbroad: shippedFromAbroad,
-        vendor: user._id || user.id || user.userId,
+        vendor: user._id || user.id
       };
 
       // Only include optional fields if they have values
