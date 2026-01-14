@@ -550,6 +550,7 @@ const MyListingsPage = () => {
       </div>
 
       {/* Tabs with counts */}
+      {/* Tabs with counts */}
       <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => (
           <button
@@ -562,7 +563,8 @@ const MyListingsPage = () => {
             }`}
           >
             {tab.label}
-            {tab.count > 0 && (
+            {/* Fix the count check */}
+            {tab.count && tab.count > 0 && (
               <span className={`inline-flex items-center justify-center w-5 h-5 text-xs rounded-full ${
                 activeTab === tab.id 
                   ? 'bg-[#3652AD] text-white' 
