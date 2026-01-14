@@ -1,113 +1,83 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Settings, Search, MoreVertical, Edit, Eye, Share2, Trash2, Home, FileText, MessageSquare, User, PlusCircle } from 'lucide-react';
+import { ArrowLeft, Settings, Search, MoreVertical, Edit, Eye, Share2, Trash2, FileText } from 'lucide-react';
+import { useCheckAuth } from '@/app/lib/hooks/useAuthApis/useCheckAuth';
+import { useFetchVendorProducts } from '@/app/lib/hooks/useProductApis/useFetchVendorProducts';
+import BottomNavigation from '@/app/components/BottomNav';
 
-type ListingTab = 'active' | 'pending' | 'renew' | 'closed' | 'drafts' | 'rejected';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  status: ListingTab;
-  listedOn: string;
-  expiresOn?: string;
-  reason?: string;
-}
+type ListingTab = 'active' | 'pending' | 'renew' | 'closed' | 'drafts' | 'rejected' | 'unpaid' | 'sold';
 
 interface MenuItem {
   icon: React.ReactElement;
   label: string;
   action: string;
-  isDestructive?: boolean; // Make it optional
+  isDestructive?: boolean;
 }
 
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Photopulse camera',
-    price: 40000,
-    image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400',
-    status: 'active',
-    listedOn: '4/10/2023'
-  },
-  {
-    id: '2',
-    name: 'Photopulse camera',
-    price: 40000,
-    image: 'https://images.unsplash.com/photo-1606933248010-ef7a8c02e1b8?w=400',
-    status: 'active',
-    listedOn: '4/10/2023'
-  },
-  {
-    id: '3',
-    name: 'Vintage Watch',
-    price: 25000,
-    image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400',
-    status: 'pending',
-    listedOn: '5/10/2023'
-  },
-  {
-    id: '4',
-    name: 'Wireless Headphones',
-    price: 15000,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
-    status: 'renew',
-    listedOn: '1/10/2023',
-    expiresOn: '15/10/2023'
-  },
-  {
-    id: '5',
-    name: 'Gaming Console',
-    price: 120000,
-    image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400',
-    status: 'closed',
-    listedOn: '20/09/2023'
-  },
-  {
-    id: '6',
-    name: 'Smartphone',
-    price: 80000,
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
-    status: 'drafts',
-    listedOn: '6/10/2023'
-  },
-  {
-    id: '7',
-    name: 'Designer Bag',
-    price: 95000,
-    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400',
-    status: 'rejected',
-    listedOn: '3/10/2023',
-    reason: 'Inappropriate category'
-  }
-];
-
 const MyListingsPage = () => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ListingTab>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  
+  // Use authentication hook
+  const { user, isLoading: authLoading, isAuthenticated } = useCheckAuth();
+  
+  // Use vendor products hook
+  const { 
+    data: products, 
+    loading: productsLoading, 
+    error: productsError,
+    refetch,
+    activeProducts,
+    pendingProducts,
+    draftProducts,
+    soldProducts,
+    renewProducts,
+    unpaidProducts
+  } = useFetchVendorProducts(user?._id || null);
 
-  const tabs: { id: ListingTab; label: string }[] = [
-    { id: 'active', label: 'Active' },
-    { id: 'pending', label: 'Pending' },
-    { id: 'renew', label: 'To renew' },
-    { id: 'closed', label: 'Closed' },
-    { id: 'drafts', label: 'Drafts' },
-    { id: 'rejected', label: 'Rejected' },
+  const tabs: { id: ListingTab; label: string; count?: number }[] = [
+    { id: 'active', label: 'Active', count: activeProducts?.length || 0 },
+    { id: 'pending', label: 'Pending', count: pendingProducts?.length || 0 },
+    { id: 'renew', label: 'To renew', count: renewProducts?.length || 0 },
+    { id: 'closed', label: 'Closed', count: soldProducts?.length || 0 },
+    { id: 'drafts', label: 'Drafts', count: draftProducts?.length || 0 },
+    { id: 'unpaid', label: 'Unpaid', count: unpaidProducts?.length || 0 },
   ];
+
+  // Filter products based on active tab
+  const getFilteredProducts = () => {
+    switch (activeTab) {
+      case 'active':
+        return activeProducts;
+      case 'pending':
+        return pendingProducts;
+      case 'renew':
+        return renewProducts;
+      case 'closed':
+        return soldProducts;
+      case 'drafts':
+        return draftProducts;
+      case 'unpaid':
+        return unpaidProducts;
+      default:
+        return [];
+    }
+  };
+
+  const filteredProducts = getFilteredProducts()?.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const formatPrice = (price: number) => {
     return `₦${price.toLocaleString()}`;
   };
 
-  
-  const router = useRouter();
   const navigateBack = () => {
     router.push('/dashboard/user');
-  }
+  };
 
   const toggleMenu = (productId: string) => {
     setOpenMenuId(openMenuId === productId ? null : productId);
@@ -118,12 +88,12 @@ const MyListingsPage = () => {
     
     switch (action) {
       case 'edit':
-        // Navigate to edit page or open edit modal
-        console.log('Editing product:', productId);
+        // Navigate to edit page
+        router.push(`/edit-product/${productId}`);
         break;
       case 'view':
         // Navigate to product detail page
-        console.log('Viewing product:', productId);
+        router.push(`/product/${productId}`);
         break;
       case 'markSold':
         markAsSold(productId);
@@ -140,95 +110,221 @@ const MyListingsPage = () => {
       case 'republish':
         republishProduct(productId);
         break;
+      case 'pay':
+        payForProduct(productId);
+        break;
     }
     setOpenMenuId(null);
   };
 
-  const markAsSold = (productId: string) => {
-    setProducts(products.map(product => 
-      product.id === productId 
-        ? { ...product, status: 'Sold' as ListingTab }
-        : product
-    ));
-    console.log('Product marked as sold:', productId);
+  const markAsSold = async (productId: string) => {
+    try {
+      // Here you would call your API to mark product as sold
+      // await productApi.markAsSold(productId);
+      alert('Product marked as sold!');
+      refetch(); // Refresh the products list
+    } catch (error) {
+      console.error('Error marking product as sold:', error);
+      alert('Failed to mark product as sold');
+    }
   };
 
-  const deleteProduct = (productId: string) => {
+  const deleteProduct = async (productId: string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      setProducts(products.filter(product => product.id !== productId));
-      console.log('Product deleted:', productId);
+      try {
+        // Here you would call your API to delete the product
+        // await productApi.deleteProduct(productId);
+        alert('Product deleted successfully!');
+        refetch(); // Refresh the products list
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Failed to delete product');
+      }
     }
   };
 
   const shareProduct = async (productId: string) => {
     const product = products.find(p => p.id === productId);
-    if (product && navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: `Check out ${product.name} for ${formatPrice(product.price)}`,
-          url: window.location.href,
-        });
-        console.log('Product shared successfully');
-      } catch (error) {
-        console.log('Error sharing product:', error);
+    if (product) {
+      const shareUrl = `${window.location.origin}/product/${productId}`;
+      
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: product.name,
+            text: `Check out ${product.name} for ${formatPrice(product.price)}`,
+            url: shareUrl,
+          });
+          console.log('Product shared successfully');
+        } catch (error) {
+          console.log('Error sharing product:', error);
+        }
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(shareUrl);
+        alert('Product link copied to clipboard!');
       }
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(window.location.href);
-      alert('Product link copied to clipboard!');
     }
   };
 
-  const renewProduct = (productId: string) => {
-    setProducts(products.map(product => 
-      product.id === productId 
-        ? { 
-            ...product, 
-            status: 'active' as ListingTab,
-            listedOn: new Date().toLocaleDateString(),
-            expiresOn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
-          }
-        : product
-    ));
-    console.log('Product renewed:', productId);
+  const renewProduct = async (productId: string) => {
+    try {
+      // Here you would call your API to renew the product
+      // await productApi.renewProduct(productId);
+      alert('Product renewed successfully!');
+      refetch(); // Refresh the products list
+    } catch (error) {
+      console.error('Error renewing product:', error);
+      alert('Failed to renew product');
+    }
   };
 
-  const republishProduct = (productId: string) => {
-    setProducts(products.map(product => 
-      product.id === productId 
-        ? { ...product, status: 'pending' as ListingTab }
-        : product
-    ));
-    console.log('Product republished:', productId);
+  const formatDateToDmy = (dateString: string | Date): string => {
+  if (!dateString) return 'Unknown date';
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    
+    const day = date.getDate();
+    const month = date.getMonth() + 1; // Months are 0-indexed
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
+  }
+};
+
+  const republishProduct = async (productId: string) => {
+    try {
+      // Here you would call your API to republish the product
+      // await productApi.republishProduct(productId);
+      alert('Product republished successfully!');
+      refetch(); // Refresh the products list
+    } catch (error) {
+      console.error('Error republishing product:', error);
+      alert('Failed to republish product');
+    }
   };
 
-  const getStatusColor = (status: ListingTab) => {
-    const colors = {
+  const payForProduct = async (productId: string) => {
+    try {
+      // Here you would handle payment logic
+      // await productApi.initiatePayment(productId);
+      router.push(`/payment/${productId}`);
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      alert('Failed to initiate payment');
+    }
+  };
+
+  const getStatusColor = (status?: string) => {
+    if (!status) return 'text-gray-600';
+    
+    const colors: Record<string, string> = {
       active: 'text-green-600',
       pending: 'text-yellow-600',
       renew: 'text-orange-600',
       closed: 'text-[#0DBA37]',
+      sold: 'text-[#0DBA37]',
       drafts: 'text-[#EF4444]',
-      rejected: 'text-red-600'
+      draft: 'text-[#EF4444]',
+      rejected: 'text-red-600',
+      unpaid: 'text-red-600',
     };
-    return colors[status];
+    
+    return colors[status.toLowerCase()] || 'text-gray-600';
   };
 
-  const getStatusText = (status: ListingTab) => {
-    const texts = {
+  const getStatusText = (status?: string) => {
+    if (!status) return 'Unknown';
+    
+    const texts: Record<string, string> = {
       active: 'Active',
       pending: 'Pending Review',
-      renew: 'Pending',
-      closed: 'Sold',
+      renew: 'Pending Renewal',
+      closed: 'Closed',
+      sold: 'Sold',
       drafts: 'Draft',
-      rejected: 'Rejected'
+      draft: 'Draft',
+      rejected: 'Rejected',
+      unpaid: 'Unpaid',
     };
-    return texts[status];
+    
+    return texts[status.toLowerCase()] || status;
   };
 
-  const getActionButtons = (product: Product) => {
-    switch (product.status) {
+  const getMenuItems = (product: any): MenuItem[] => {
+    const baseItems: MenuItem[] = [
+      { icon: <Edit className="w-4 h-4" />, label: 'Edit', action: 'edit' },
+      { icon: <Eye className="w-4 h-4" />, label: 'View', action: 'view' },
+      { icon: <Share2 className="w-4 h-4" />, label: 'Share', action: 'share' },
+    ];
+
+    const status = product.status?.toLowerCase();
+    
+    switch (status) {
+      case 'active':
+        return [
+          ...baseItems,
+          { 
+            icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>, 
+            label: 'Mark as sold', 
+            action: 'markSold' 
+          },
+          { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
+        ];
+      
+      case 'pending':
+      case 'renew':
+        return [
+          ...baseItems,
+          { 
+            icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 4v6h6" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>, 
+            label: 'Renew', 
+            action: 'renew' 
+          },
+          { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
+        ];
+      
+      case 'unpaid':
+        return [
+          ...baseItems,
+          { 
+            icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" />
+              <path d="M1 10h22" />
+            </svg>, 
+            label: 'Pay Now', 
+            action: 'pay' 
+          },
+          { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
+        ];
+      
+      default:
+        return [
+          ...baseItems,
+          { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
+        ];
+    }
+  };
+
+  const getActionButtons = (product: any) => {
+    const status = product.status?.toLowerCase();
+    
+    switch (status) {
       case 'active':
         return (
           <div className="flex gap-2">
@@ -236,7 +332,7 @@ const MyListingsPage = () => {
               onClick={() => markAsSold(product.id)}
               className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-[11px] font-medium rounded-full hover:bg-blue-50"
             >
-              Mark as sold out
+              Mark as sold
             </button>
             <button 
               onClick={() => handleMenuAction('edit', product.id)}
@@ -246,32 +342,35 @@ const MyListingsPage = () => {
             </button>
           </div>
         );
+      
       case 'pending':
-        return (
-          <div className="flex gap-2">
-            <button 
-              onClick={() => handleMenuAction('edit', product.id)}
-              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-50"
-            >
-              Edit
-            </button>
-            {/* <button 
-              onClick={() => deleteProduct(product.id)}
-              className="flex-1 py-2 px-4 bg-red-600 text-white text-xs font-medium rounded-full hover:bg-red-700"
-            >
-              Delete
-            </button> */}
-          </div>
-        );
       case 'renew':
         return (
           <div className="flex gap-2">
-            {/* <button 
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-50"
+            >
+              Edit
+            </button>
+            <button 
               onClick={() => handleMenuAction('renew', product.id)}
+              className="flex-1 py-2 px-4 bg-[#3652AD] text-white text-xs font-medium rounded-full hover:bg-[#3652AD]"
+            >
+              Renew
+            </button>
+          </div>
+        );
+      
+      case 'unpaid':
+        return (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMenuAction('pay', product.id)}
               className="flex-1 py-2 px-4 bg-green-600 text-white text-xs font-medium rounded-full hover:bg-green-700"
             >
-              Renew Now
-            </button> */}
+              Pay Now
+            </button>
             <button 
               onClick={() => handleMenuAction('edit', product.id)}
               className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-50"
@@ -280,23 +379,8 @@ const MyListingsPage = () => {
             </button>
           </div>
         );
-      case 'closed':
-        return (
-          <div className="flex gap-2">
-            <button 
-              onClick={() => handleMenuAction('republish', product.id)}
-              className="flex-1 py-2 px-4 bg-white border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-700"
-            >
-              Edit
-            </button>
-            <button 
-              onClick={() => deleteProduct(product.id)}
-              className="flex-1 py-2 px-4 border bg-[#3652AD] text-white text-xs font-medium rounded-full hover:bg-red-50"
-            >
-              Re-list
-            </button>
-          </div>
-        );
+      
+      case 'draft':
       case 'drafts':
         return (
           <div className="flex gap-2">
@@ -308,101 +392,133 @@ const MyListingsPage = () => {
             </button>
             <button 
               onClick={() => handleMenuAction('republish', product.id)}
-              className="flex-1 py-2 px-4 border bg-[#3652AD] text-xs font-medium rounded-full hover:bg-green-50"
+              className="flex-1 py-2 px-4 bg-[#3652AD] text-white text-xs font-medium rounded-full hover:bg-green-50"
             >
               Publish
             </button>
           </div>
         );
-      case 'rejected':
+      
+      case 'sold':
+      case 'closed':
         return (
           <div className="flex gap-2">
             <button 
-              onClick={() => handleMenuAction('edit', product.id)}
-              className="flex-1 py-2 px-4 bg-blue-600 text-white text-xs font-medium rounded-full hover:bg-blue-700"
+              onClick={() => handleMenuAction('republish', product.id)}
+              className="flex-1 py-2 px-4 bg-white border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-700"
             >
-              Edit & Resubmit
+              Re-list
             </button>
             <button 
               onClick={() => deleteProduct(product.id)}
-              className="flex-1 py-2 px-4 border border-red-600 text-red-600 text-xs font-medium rounded-full hover:bg-red-50"
+              className="flex-1 py-2 px-4 border bg-[#3652AD] text-white text-xs font-medium rounded-full hover:bg-red-50"
             >
               Delete
             </button>
           </div>
         );
+      
       default:
-        return null;
+        return (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMenuAction('edit', product.id)}
+              className="flex-1 py-2 px-4 border border-[#3652AD] text-[#3652AD] text-xs font-medium rounded-full hover:bg-blue-50"
+            >
+              Edit
+            </button>
+          </div>
+        );
     }
   };
 
-  // Add this interface with your other type definitions
-interface MenuItem {
-  icon: React.ReactElement;
-  label: string;
-  action: string;
-  isDestructive?: boolean; // Make it optional
-}
+  // Loading state
+  if (authLoading || productsLoading) {
+    return (
+      <div className="w-full h-screen flex flex-col bg-white">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <button onClick={navigateBack} className="p-1">
+              <ArrowLeft className="w-6 h-6 text-gray-700" />
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">My listing</h1>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your products...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-// Update the getMenuItems function to use this interface
-const getMenuItems = (product: Product): MenuItem[] => {
-  const baseItems: MenuItem[] = [
-    { icon: <Edit className="w-4 h-4" />, label: 'Edit', action: 'edit' },
-    { icon: <Eye className="w-4 h-4" />, label: 'View', action: 'view' },
-    { icon: <Share2 className="w-4 h-4" />, label: 'Share', action: 'share' },
-  ];
+  // Error state
+  if (productsError) {
+    return (
+      <div className="w-full h-screen flex flex-col bg-white">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <button onClick={navigateBack} className="p-1">
+              <ArrowLeft className="w-6 h-6 text-gray-700" />
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">My listing</h1>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md p-4">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-6 0 9 9 0 016 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Products</h2>
+            <p className="text-gray-600 mb-4">{productsError}</p>
+            <button
+              onClick={() => refetch()}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const statusSpecificItems: Record<ListingTab, MenuItem[]> = {
-    active: [
-      ...baseItems,
-      { 
-        icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M9 12l2 2 4-4" />
-        </svg>, 
-        label: 'Mark as sold out', 
-        action: 'markSold' 
-      },
-    ],
-    pending: baseItems,
-    renew: [
-      ...baseItems,
-      { 
-        icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M1 4v6h6" />
-          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-        </svg>, 
-        label: 'Renew', 
-        action: 'renew' 
-      },
-    ],
-    closed: [
-      ...baseItems,
-      { 
-        icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>, 
-        label: 'Republish', 
-        action: 'republish' 
-      },
-    ],
-    drafts: baseItems,
-    rejected: baseItems,
-  };
+  // No products state
+  if (!products || products.length === 0) {
+    return (
+      <div className="w-full h-screen flex flex-col bg-white">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <button onClick={navigateBack} className="p-1">
+              <ArrowLeft className="w-6 h-6 text-gray-700" />
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">My listing</h1>
+          </div>
+          <button className="p-1">
+            <Settings className="w-6 h-6 text-gray-700" />
+          </button>
+        </div>
 
-  const items = statusSpecificItems[product.status] || baseItems;
-
-  return [
-    ...items,
-    { icon: <Trash2 className="w-4 h-4" />, label: 'Delete', action: 'delete', isDestructive: true }
-  ];
-};
-
-  const filteredProducts = products.filter(product => 
-    product.status === activeTab && 
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md p-4">
+            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Listings Yet</h2>
+            <p className="text-gray-600 mb-6">You haven't created any product listings yet.</p>
+            <button
+              onClick={() => router.push('/post-item')}
+              className="bg-[#3652AD] text-white px-6 py-3 rounded-full font-medium hover:bg-[#3652AD] transition-colors"
+            >
+              Create Your First Listing
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-screen flex flex-col bg-white">
@@ -425,7 +541,7 @@ const getMenuItems = (product: Product): MenuItem[] => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search your listings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full placeholder-gray-500 pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -433,19 +549,28 @@ const getMenuItems = (product: Product): MenuItem[] => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs with counts */}
       <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap relative flex-shrink-0 ${
+            className={`px-4 py-3 text-sm font-medium whitespace-nowrap relative flex-shrink-0 flex items-center gap-1 ${
               activeTab === tab.id
                 ? 'text-[#3652AD]'
                 : 'text-gray-600'
             }`}
           >
             {tab.label}
+            {tab.count > 0 && (
+              <span className={`inline-flex items-center justify-center w-5 h-5 text-xs rounded-full ${
+                activeTab === tab.id 
+                  ? 'bg-[#3652AD] text-white' 
+                  : 'bg-gray-200 text-gray-700'
+              }`}>
+                {tab.count}
+              </span>
+            )}
             {activeTab === tab.id && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3652AD]" />
             )}
@@ -457,8 +582,14 @@ const getMenuItems = (product: Product): MenuItem[] => {
       <div className="flex-1 overflow-y-auto">
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <FileText className="w-12 h-12 mb-3 text-gray-300" />
-            <p className="text-sm">No {tabs.find(tab => tab.id === activeTab)?.label?.toLowerCase()} listings found</p>
+            <Search className="w-12 h-12 mb-3 text-gray-300" />
+            <p className="text-sm">No listings found matching "{searchQuery}"</p>
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="mt-2 text-[#3652AD] text-sm font-medium hover:underline"
+            >
+              Clear search
+            </button>
           </div>
         ) : (
           filteredProducts.map((product) => (
@@ -467,9 +598,13 @@ const getMenuItems = (product: Product): MenuItem[] => {
                 {/* Product Image */}
                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                   <img
-                    src={product.image}
+                    src={product.images?.[0] || product.image || '/placeholder-image.jpg'}
                     alt={product.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-image.jpg';
+                    }}
                   />
                 </div>
 
@@ -478,36 +613,31 @@ const getMenuItems = (product: Product): MenuItem[] => {
                   <div className="flex justify-between items-start mb-1 w-full">
                     <div className="w-full">
                       <div className='border-b border-gray-400 pb-1'>
-                      <h3 className="text-sm font-medium text-gray-900 mb-1">
-                        {product.name}
-                      </h3>
-                      <p className="text-base font-bold text-gray-900 mb-2">
-                        {formatPrice(product.price)}
-                      </p>
+                        <h3 className="text-sm font-medium text-gray-900 mb-1">
+                          {product.name}
+                        </h3>
+                        <p className="text-base font-bold text-gray-900 mb-2">
+                          {formatPrice(product.price)}
+                        </p>
                       </div>
                       <div className='flex w-full justify-between mt-3'>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Listed on: {product.listedOn}
-                      </p>
-                       <span className={`text-xs font-medium ${getStatusColor(product.status)}`}>
-                        {getStatusText(product.status)}
-                      </span>
-                      </div>
-                      {/* {product.expiresOn && (
-                        <p className="text-xs text-orange-500 mb-1">
-                          Expires on: {product.expiresOn}
+                        <p className="text-xs text-gray-500 mb-1">
+                          Listed on: {product.listedOn || 'Unknown date'}
                         </p>
-                      )} */}
-                      {product.reason && (
-                        <p className="text-xs text-red-500 mb-1">
-                          Reason: {product.reason}
+                        <span className={`text-xs font-medium ${getStatusColor(product.status)}`}>
+                          {getStatusText(product.status)}
+                        </span>
+                      </div>
+                      {/* Additional product info can be added here */}
+                      {product.views !== undefined && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {product.views} views • {product.purchases || 0} purchases
                         </p>
                       )}
                     </div>
 
                     {/* Status and Menu */}
                     <div className="flex items-center gap-2">
-                     
                       <div className="relative">
                         <button 
                           onClick={() => toggleMenu(product.id)}
@@ -548,35 +678,28 @@ const getMenuItems = (product: Product): MenuItem[] => {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      {/* <div className="border-t border-gray-200 bg-white">
-        <div className="flex items-center justify-around py-2">
-          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
-            <Home className="w-5 h-5" />
-            <span className="text-xs">Home</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
-            <FileText className="w-5 h-5" />
-            <span className="text-xs">Feed</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-xs">Requests</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
-            <PlusCircle className="w-5 h-5" />
-            <span className="text-xs">Sell</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 p-2 text-gray-600">
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-xs">Messages</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 p-2 text-blue-600">
-            <User className="w-5 h-5" />
-            <span className="text-xs">Account</span>
-          </button>
+      {/* Stats Summary */}
+      {/* <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between text-sm">
+          <div>
+            <p className="text-gray-600">Total Listings:</p>
+            <p className="font-semibold text-gray-900">{products.length}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">Active:</p>
+            <p className="font-semibold text-green-600">{activeProducts?.length || 0}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">Pending:</p>
+            <p className="font-semibold text-yellow-600">{pendingProducts?.length || 0}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">Sold:</p>
+            <p className="font-semibold text-[#0DBA37]">{soldProducts?.length || 0}</p>
+          </div>
         </div>
       </div> */}
+      <BottomNavigation/>
     </div>
   );
 };

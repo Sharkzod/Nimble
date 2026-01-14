@@ -51,10 +51,37 @@ export const productApi = {
     apiClient.get('/products/', { params }),
 
   // Create new product
-  createProduct: async (productData: any): Promise<any> => {
-    const response = await apiClient.post('/products', productData);
+  createProduct: async (productData: any, files: File[]): Promise<any> => {
+    // Create FormData
+    const formData = new FormData();
+    
+    // Append files
+    files.forEach((file, index) => {
+      formData.append('images', file);
+    });
+    
+    // Append product data
+    Object.keys(productData).forEach(key => {
+      if (productData[key] !== undefined) {
+        // Stringify objects/arrays for JSON fields
+        if (typeof productData[key] === 'object' && productData[key] !== null) {
+          formData.append(key, JSON.stringify(productData[key]));
+        } else {
+          formData.append(key, productData[key]);
+        }
+      }
+    });
+    
+    // Use proper headers for multipart/form-data
+    const response = await apiClient.post('/products/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
     return response.data;
   },
+
 
   getMostViewed: async (): Promise<Product[]> => {
     const response = await apiClient.get('/products/most-viewed');
@@ -120,11 +147,7 @@ export const productApi = {
         vendor: product.vendor,
         status: product.status || 'active', // Default status
         createdAt: product.createdAt,
-        listedOn: product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        }) : 'Unknown date'
+        listedOn: product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US') : 'Unknown date'
       }));
     } else if (Array.isArray(response.data)) {
       // If API directly returns array

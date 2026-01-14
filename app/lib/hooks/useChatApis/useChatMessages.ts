@@ -9,7 +9,10 @@ export const useChatMessages = (chatId: string) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`https://nimble-backend-qfg0.onrender.com/api/chats/messages/${chatId}`, {
+      const backendUrl = 'http://localhost:4000';
+      // const backendUrl = 'https://nimble-backend-qfg0.onrender.com';
+
+      const response = await fetch(`${backendUrl}/api/chats/messages/${chatId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

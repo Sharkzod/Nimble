@@ -13,6 +13,7 @@ import { useWishlist } from '../../lib/hooks/useProductApis/useWishlist'
 import BottomNavigation from '@/app/components/BottomNav'
 import MobileProductHeader from '@/app/components/MobileProductHeader'
 import { useChatNavigation } from '@/app/lib/hooks/useChatApis/useChatNavigation'
+import PaymentPopup from '@/app/components/chatComponents/PaymentPopUp'
 // import { Product } from '@/app/lib/api/productsApi'
 
 interface Product {
@@ -83,13 +84,17 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
-
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
   // Initialize selected size when product loads
   useEffect(() => {
     if (product?.sizes && product.sizes.length > 0 && !selectedSize) {
       setSelectedSize(product.sizes[0]);
     }
   }, [product, selectedSize]);
+
+
+  
 
   const handleWishlistToggle = async (productId: string, currentStatus: boolean) => {
     try {
@@ -171,35 +176,68 @@ const handleMessageSeller = async () => {
   };
 
 const handleBuyNow = async () => {
-    if (!product || !product.vendor) {
-      console.error('Product or vendor information missing');
-      alert('Unable to proceed with purchase. Product information is incomplete.');
-      return;
-    }
+  if (!product || !product.vendor) {
+    console.error('Product or vendor information missing');
+    alert('Unable to proceed with purchase. Product information is incomplete.');
+    return;
+  }
 
-    const vendorId = typeof product.vendor === 'string' ? product.vendor : product.vendor._id;
+  // Check if user is authenticated
+  if (!isAuthenticated || !currentUser) {
+    router.push(`/login?redirect=/product/${product._id}`);
+    return;
+  }
 
-    console.log('🛒 Buy now clicked:', {
-      productId: product._id,
-      vendorId,
-      currentUserId: currentUser?._id
-    });
+  // Get vendor ID
+  const vendorId = typeof product.vendor === 'string' ? product.vendor : product.vendor._id;
+  
+  if (!vendorId) {
+    alert('Vendor information is missing. Cannot proceed with purchase.');
+    return;
+  }
 
-    const chat = await navigateToChat({
-      productId: product._id,
-      sellerId: vendorId,
-      buyerId: currentUser?._id || '',
-      productName: product.name,
-      productPrice: product.price,
-      productImages: product.images || []
-    });
-
-    // Optional: You could add an automatic "I want to buy this" message here
-    if (chat) {
-      console.log('✅ Chat created for purchase, could send automatic message');
-      // You could add logic here to send an automatic "I want to buy this" message
-    }
+  // Prepare order details
+  const orderDetails = {
+    productId: product._id,
+    vendorId: vendorId,
+    productName: product.name,
+    productImage: product.images?.[0],
+    size: selectedSize || 'N/A',
+    quantity: quantity,
+    unitPrice: product.price,
+    deliveryFee: 0,
+    total: product.price * quantity
   };
+
+  console.log('🛒 Opening payment for:', orderDetails);
+  
+  // Set order details and open payment popup
+  setOrderDetails(orderDetails);
+  setShowPaymentPopup(true);
+};
+
+
+  const handleOrderCreated = (order: any) => {
+  console.log('✅ Order created successfully:', order);
+  
+  // Close payment popup
+  setShowPaymentPopup(false);
+  
+  // Show success message
+  alert('Order placed successfully!');
+  
+  // Optional: Redirect to order details page
+  router.push(`/orders/${order._id}`);
+};
+
+const handlePaymentRedirect = (paymentUrl: string) => {
+  console.log('🔗 Redirecting to payment:', paymentUrl);
+  setShowPaymentPopup(false);
+  window.open(paymentUrl, '_blank');
+};
+
+
+
 
 
  const prevImage = () => {
@@ -987,6 +1025,16 @@ const ProductCard = ({ product }: { product: Product }) => (
           </>
         )}
       </div>
+
+      {orderDetails && (
+        <PaymentPopup
+          isOpen={showPaymentPopup}
+          onClose={() => setShowPaymentPopup(false)}
+          onOrderCreated={handleOrderCreated}
+          onPaymentRedirect={handlePaymentRedirect}
+          orderDetails={orderDetails}
+        />
+      )}
       
       <div className="block md:hidden fixed bottom-0 left-0 right-0 z-50">
         <BottomNavigation/>

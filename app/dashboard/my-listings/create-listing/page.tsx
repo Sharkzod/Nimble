@@ -3,47 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
 import Footer from '@/app/components/Footer';
-
-// Mock hook for demonstration
-const useCreateProduct = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [product, setProduct] = useState(null);
-
-  const createProduct = async (data: any) => {
-    setLoading(true);
-    setError(null);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Product data:', data);
-      setLoading(false);
-      setSuccess(true);
-      setProduct(data);
-    }, 2000);
-  };
-
-  return { createProduct, loading, error, success, product };
-};
+import { useCheckAuth } from '@/app/lib/hooks/useAuthApis/useCheckAuth';
+import { useCreateProduct } from '@/app/lib/hooks/useProductApis/useCreateProduct';
+import { useFetchCategories } from '@/app/lib/hooks/useCategoryApis/useFetchCategories';
 
 interface BulkPrice {
   minQuantity: number;
   price: number;
 }
-
-const categories = [
-  'Electronics',
-  'Fashion',
-  'Home & Garden',
-  'Sports & Outdoors',
-  'Books & Media',
-  'Toys & Games',
-  'Automotive',
-  'Health & Beauty',
-  'Food & Beverages',
-  'Other'
-];
 
 const cities = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Benin City', 'Kaduna'];
 const states = ['Lagos', 'Abuja FCT', 'Rivers', 'Kano', 'Oyo', 'Edo', 'Kaduna'];
@@ -57,6 +24,7 @@ export default function PostItemPage() {
   // Basic Product Information
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState(''); // Store category ID separately
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [condition, setCondition] = useState('New');
@@ -65,7 +33,12 @@ export default function PostItemPage() {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoLink, setVideoLink] = useState('');
-  const { createProduct, loading, error, success, product } = useCreateProduct();
+  
+  // Use hooks
+  const { user, token, isAuthenticated, isLoading: authLoading } = useCheckAuth();
+  const { createProduct, loading: createLoading, error, success, product } = useCreateProduct();
+  const { categories, loading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useFetchCategories();
+
   const [bulkPrices, setBulkPrices] = useState<BulkPrice[]>([
     { minQuantity: 2, price: 10000 },
     { minQuantity: 4, price: 9800 }
@@ -89,6 +62,8 @@ export default function PostItemPage() {
   const [shippingCity, setShippingCity] = useState('');
   const [shippingState, setShippingState] = useState('');
   const [shippingOptions, setShippingOptions] = useState<string[]>([]);
+  const [isNegotiable, setIsNegotiable] = useState(false);
+  const [showNegotiableDetails, setShowNegotiableDetails] = useState(false);
 
   // Dropdown states
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -104,6 +79,7 @@ export default function PostItemPage() {
   const [showShippingCityDropdown, setShowShippingCityDropdown] = useState(false);
   const [showShippingStateDropdown, setShowShippingStateDropdown] = useState(false);
   const [showShippingOptions, setShowShippingOptions] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Refs for click outside detection
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -164,6 +140,32 @@ export default function PostItemPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const loading = authLoading || createLoading || isSubmitting || categoriesLoading;
+
+  // Handle authentication and categories loading
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log('User not authenticated, redirecting...');
+      alert('Please login to create a product');
+    }
+  }, [authLoading, isAuthenticated]);
+
+  // Handle success/error messages
+  useEffect(() => {
+    if (success) {
+      console.log('Product created successfully:', product);
+      alert('Product created successfully!');
+      
+      // Reset form after successful submission
+      resetForm();
+    }
+    
+    if (error) {
+      console.error('Product creation error:', error);
+      alert(`Error: ${error}`);
+    }
+  }, [success, error, product]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
@@ -179,18 +181,6 @@ export default function PostItemPage() {
     }
   };
 
-  useEffect(() => {
-    if (success) {
-      console.log('Product created successfully:', product);
-      alert('Product created successfully!');
-    }
-    
-    if (error) {
-      console.error('Product creation error:', error);
-      alert(`Error: ${error}`);
-    }
-  }, [success, error, product]);
-
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
@@ -204,9 +194,14 @@ export default function PostItemPage() {
     return (amount * 0.9).toFixed(0);
   };
 
+  const toggleNegotiable = () => {
+    const newValue = !isNegotiable;
+    setIsNegotiable(newValue);
+    setShowNegotiableDetails(newValue);
+  };
+
   const addBulkPrice = () => {
     if (bulkPrices.length === 0) {
-      // If no bulk prices exist, create first one based on main price
       const basePrice = Number(price) || 10000;
       setBulkPrices([{ minQuantity: 2, price: basePrice - 200 }]);
     } else {
@@ -266,60 +261,198 @@ export default function PostItemPage() {
     }
   };
 
+  const handleCategorySelect = (categoryName: string, categoryId: string) => {
+    setCategory(categoryName);
+    setCategoryId(categoryId);
+    setShowCategoryDropdown(false);
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setCategory('');
+    setCategoryId('');
+    setCity('');
+    setState('');
+    setCondition('New');
+    setDescription('');
+    setPrice('');
+    setImages([]);
+    setImagePreviews([]);
+    setVideoLink('');
+    setIsNegotiable(false);
+    setShippedFromAbroad(false);
+    setBulkPrices([{ minQuantity: 2, price: 10000 }, { minQuantity: 4, price: 9800 }]);
+    setWarrantyValue('');
+    setWarrantyPeriod('Month');
+    setDeliveryLocation('');
+    setScope('');
+    setDeliveryType('');
+    setNumberOfDays('');
+    setShippingCountry('');
+    setShippingCity('');
+    setShippingState('');
+    setShippingOptions([]);
+  };
+
   const handleSubmit = async () => {
-    // Validate required fields
-    if (!title || !category || !price || !city || !state || !description) {
-      alert('Please fill in all required fields');
+    if (loading || !isAuthenticated || !user || !token) {
+      console.error('Cannot submit: Auth incomplete');
       return;
     }
-
-    if (images.length === 0) {
-      alert('Please upload at least one image');
-      return;
-    }
-
-    // Prepare the data for API
-    const productData = {
-      name: title,
-      description: description,
-      price: Number(price),
-      condition: condition,
-      location: {
-        city: city,
-        state: state
-      },
-      category: category,
-      images: images,
-      isNegotiable: false,
-      isShippedFromAbroad: shippedFromAbroad,
-      shippingAddress: {
-        country: shippingCountry || 'Nigeria',
-        city: shippingCity || city,
-        state: shippingState || state
-      },
-      shippingOption: shippingOptions,
-      deliveryTimelines: [{
-        location: deliveryLocation || city,
-        scope: scope || 'Nationwide',
-        deliveryType: deliveryType || 'Same day',
-        numberOfDays: numberOfDays || '1-2 days'
-      }],
-      videoLink: videoLink || undefined,
-      bulkPrices: bulkPrices.length > 0 ? bulkPrices : undefined,
-      warranty: warrantyValue ? {
-        value: warrantyValue,
-        period: warrantyPeriod
-      } : undefined
-    };
-
-    console.log('Submitting product data:', productData);
     
     try {
-      await createProduct(productData);
+      setIsSubmitting(true);
+      
+      // Validate required fields
+      const validationErrors = [];
+      
+      if (!title.trim()) validationErrors.push('Title');
+      if (!categoryId.trim()) validationErrors.push('Category');
+      if (!price.trim()) validationErrors.push('Price');
+      if (!city.trim()) validationErrors.push('City');
+      if (!state.trim()) validationErrors.push('State');
+      if (!description.trim()) validationErrors.push('Description');
+      
+      if (validationErrors.length > 0) {
+        alert(`Please fill in all required fields: ${validationErrors.join(', ')}`);
+        return;
+      }
+
+      if (images.length === 0) {
+        alert('Please upload at least one image');
+        return;
+      }
+
+      // Prepare the data for API
+      const productData: any = {
+        name: title,
+        description: description,
+        price: Number(price.replace(/,/g, '')),
+        condition: condition,
+        location: JSON.stringify({
+          city: city,
+          state: state
+        }),
+        category: categoryId, // Send category ID
+        isNegotiable: isNegotiable,
+        isShippedFromAbroad: shippedFromAbroad,
+        vendor: user._id || user.id || user.userId,
+      };
+
+      // Only include optional fields if they have values
+      if (videoLink) {
+        productData.videoLink = videoLink;
+      }
+
+      if (bulkPrices.length > 0) {
+        productData.bulkPrices = JSON.stringify(bulkPrices.map(bp => ({
+          quantity: bp.minQuantity,
+          price: bp.price
+        })));
+      }
+
+      if (shippingCountry && shippedFromAbroad) {
+        productData.shippingAddress = JSON.stringify({
+          country: shippingCountry,
+          city: shippingCity || city,
+          state: shippingState || state
+        });
+      }
+
+      if (shippingOptions.length > 0) {
+        productData.shippingOptions = JSON.stringify(shippingOptions);
+      }
+
+      if (deliveryLocation && shippedFromAbroad) {
+        productData.deliveryTimelines = JSON.stringify([{
+          location: deliveryLocation,
+          scope: scope || 'Nationwide',
+          deliveryType: deliveryType || 'Same day',
+          numberOfDays: numberOfDays || '1-2 days'
+        }]);
+      }
+
+      // Add warranty if exists
+      if (warrantyValue) {
+        productData.warranty = JSON.stringify({
+          value: warrantyValue,
+          period: warrantyPeriod
+        });
+      }
+
+      console.log('Submitting product data:', productData);
+      console.log('Image files:', images.length);
+      console.log('Authenticated user:', user);
+      
+      // Call the createProduct hook with images
+      await createProduct(productData, images);
+      
     } catch (err) {
       console.error('Error in handleSubmit:', err);
+      alert('Failed to create product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // Loading states
+  // if (authLoading || categoriesLoading) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+  //         <p className="text-gray-900 font-medium">
+  //           {authLoading ? 'Checking authentication...' : 'Loading categories...'}
+  //         </p>
+  //         <p className="text-gray-600 text-sm mt-2">Please wait while we load the necessary data</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-lg text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H9m3-6a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">Please login to create a product listing.</p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (categoriesError && !categoriesLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-lg text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Categories</h2>
+          <p className="text-gray-600 mb-4">{categoriesError}</p>
+          <button
+            onClick={() => refetchCategories()}
+            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -337,7 +470,10 @@ export default function PostItemPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3 shadow sticky top-0 z-10">
-        <button className="text-gray-700 hover:text-gray-900">
+        <button 
+          className="text-gray-700 hover:text-gray-900"
+          onClick={() => window.history.back()}
+        >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -383,13 +519,10 @@ export default function PostItemPage() {
       <div className="space-y-4 mt-4">
         {/* Choose Categories Section */}
         <div className="p-4 w-[90%] mx-auto bg-white rounded-2xl border border-gray-200">
-          {/* Category Dropdown */}
-          
-
           {/* Image Upload */}
           <div className="mb-6">
             <label className="block text-gray-900 font-medium mb-3">
-              Add product images
+              Add product images *
             </label>
             <div className="flex flex-wrap gap-3">
               {imagePreviews.map((preview, index) => (
@@ -413,9 +546,11 @@ export default function PostItemPage() {
                   multiple
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={images.length >= 5}
                 />
               </label>
             </div>
+            <p className="text-sm text-gray-500 mt-2">Upload up to 5 images. Maximum size: 5MB each.</p>
           </div>
 
           {/* Video Link */}
@@ -424,80 +559,95 @@ export default function PostItemPage() {
               type="text"
               value={videoLink}
               onChange={(e) => setVideoLink(e.target.value)}
-              placeholder="Youtube or tiktok video link"
+              placeholder="Youtube or tiktok video link (optional)"
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+          
+          {/* Category Dropdown */}
           <div className="mb-6" ref={categoryRef}>
+            <label className="block text-gray-900 font-medium mb-3">
+              Category *
+            </label>
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => !categoriesLoading && setShowCategoryDropdown(!showCategoryDropdown)}
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={categoriesLoading}
               >
                 <span className={category ? 'text-gray-900' : 'text-gray-500'}>
-                  {category || 'Choose category'}
+                  {category || 'Select a category'}
                 </span>
-                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                {categoriesLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                ) : (
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                )}
               </button>
 
-              {showCategoryDropdown && (
+              {showCategoryDropdown && categories.length > 0 && (
                 <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {categories.map((cat) => (
                     <button
-                      key={cat}
+                      key={cat._id}
                       type="button"
-                      onClick={() => {
-                        setCategory(cat);
-                        setShowCategoryDropdown(false);
-                      }}
+                      onClick={() => handleCategorySelect(cat.name, cat._id)}
                       className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
                     >
-                      {cat}
+                      {cat.name}
+                      {cat.description && (
+                        <p className="text-sm text-gray-500 mt-1">{cat.description}</p>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
+
+              {showCategoryDropdown && categories.length === 0 && !categoriesLoading && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
+                  <p className="text-gray-500 text-center">No categories available</p>
+                </div>
+              )}
             </div>
+            {categoriesError && (
+              <p className="text-red-500 text-sm mt-2">{categoriesError}</p>
+            )}
           </div>
         </div>
 
-        
-
         {/* Basic Product Information */}
         <div className="p-4 w-[90%] mx-auto bg-white rounded-2xl border border-gray-200 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Product Details</h2>
-          
           {/* Title Input */}
           <div>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Title*"
-              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Product title *"
+              className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Location Section */}
           <div>
-            <label className="block text-gray-900 font-medium mb-3">Location</label>
-            <div className="grid grid-cols-2 gap-3">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Location *</label>
+            <div className="grid grid-cols-2 gap-2">
               {/* City Dropdown */}
               <div className="relative" ref={cityRef}>
                 <button
                   type="button"
                   onClick={() => setShowCityDropdown(!showCityDropdown)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
-                  <span className={city ? 'text-gray-900' : 'text-gray-500'}>
-                    {city || 'City'}
+                  <span className={city ? 'text-gray-900' : 'text-gray-400'}>
+                    {city || 'City *'}
                   </span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
                 {showCityDropdown && (
-                  <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {cities.map((c) => (
                       <button
                         key={c}
@@ -506,7 +656,7 @@ export default function PostItemPage() {
                           setCity(c);
                           setShowCityDropdown(false);
                         }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
                       >
                         {c}
                       </button>
@@ -520,16 +670,16 @@ export default function PostItemPage() {
                 <button
                   type="button"
                   onClick={() => setShowStateDropdown(!showStateDropdown)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
-                  <span className={state ? 'text-gray-900' : 'text-gray-500'}>
-                    {state || 'State'}
+                  <span className={state ? 'text-gray-900' : 'text-gray-400'}>
+                    {state || 'State *'}
                   </span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showStateDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showStateDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
                 {showStateDropdown && (
-                  <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {states.map((s) => (
                       <button
                         key={s}
@@ -538,7 +688,7 @@ export default function PostItemPage() {
                           setState(s);
                           setShowStateDropdown(false);
                         }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
                       >
                         {s}
                       </button>
@@ -554,14 +704,14 @@ export default function PostItemPage() {
             <button
               type="button"
               onClick={() => setShowConditionDropdown(!showConditionDropdown)}
-              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <span className="text-gray-900">{condition}</span>
-              <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showConditionDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showConditionDropdown ? 'rotate-180' : ''}`} />
             </button>
 
             {showConditionDropdown && (
-              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg">
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                 {conditions.map((c) => (
                   <button
                     key={c}
@@ -570,7 +720,7 @@ export default function PostItemPage() {
                       setCondition(c);
                       setShowConditionDropdown(false);
                     }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 text-gray-900 border-b border-gray-100 last:border-b-0"
                   >
                     {c}
                   </button>
@@ -581,137 +731,189 @@ export default function PostItemPage() {
 
           {/* Description */}
           <div>
+            <label className="block text-gray-700 text-sm font-medium mb-2">Description *</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description"
-              rows={5}
-              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="Describe your product in detail..."
+              rows={4}
+              className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
+        </div>
 
-          {/* Price */}
-          {/* <div>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-900 font-medium">₦</div>
-              <input
-                type="text"
-                value={price}
-                onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))}
-                placeholder="Price*"
-                className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div> */}
-
-          {/* Commission Calculation */}
-          {/* {price && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-100 rounded-lg p-4">
-                <div className="text-sm text-gray-600 mb-1">Commission: 10%</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-900 font-medium">₦</span>
-                  <span className="text-gray-700 text-lg">{calculateCommission(Number(price))}</span>
-                </div>
-              </div>
-              <div className="bg-gray-100 rounded-lg p-4">
-                <div className="text-sm text-gray-600 mb-1">You will receive</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-900 font-medium">₦</span>
-                  <span className="text-gray-700 text-lg">{calculateYouReceive(Number(price))}</span>
-                </div>
-              </div>
-            </div>
-          )} */}
-
-          {/* Bulk Pricing */}
-          {/* <div className="space-y-3">
-            {bulkPrices.map((bulk, index) => (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
-                {editingBulkIndex === index ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-600 mb-1 block">Min Quantity</label>
-                        <input
-                          type="number"
-                          value={editBulkQuantity}
-                          onChange={(e) => setEditBulkQuantity(e.target.value)}
-                          className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-600 mb-1 block">Price (₦)</label>
-                        <input
-                          type="number"
-                          value={editBulkPrice}
-                          onChange={(e) => setEditBulkPrice(e.target.value)}
-                          className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={saveEditingBulk}
-                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#3652AD]"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={cancelEditingBulk}
-                        className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      From {bulk.minQuantity} pieces
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="font-semibold text-gray-900">₦{bulk.price.toLocaleString()}</div>
-                      <button
-                        type="button"
-                        onClick={() => removeBulkPrice(index)}
-                        className="text-red-500 text-sm font-medium hover:text-red-600"
-                      >
-                        Remove
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => startEditingBulk(index)}
-                        className="text-blue-600 text-sm font-medium hover:text-[#3652AD]"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-            
+        {/* Negotiable Section */}
+        <div className="p-4 w-[100%] mx-auto bg-white rounded-2xl border border-gray-200">
+          {/* Negotiable Toggle */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-900 font-medium">Negotiable</span>
             <button
               type="button"
-              onClick={addBulkPrice}
-              className="flex items-center gap-2 text-blue-600 font-medium hover:text-[#3652AD]"
+              onClick={toggleNegotiable}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                isNegotiable ? 'bg-[#0973A8]' : 'bg-gray-300'
+              }`}
             >
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
-                <Plus className="w-3 h-3 text-white" />
-              </div>
-              Add Bulk price
+              <div
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                  isNegotiable ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
             </button>
-          </div> */}
+          </div>
+
+          {/* Negotiable Details Dropdown */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              isNegotiable && showNegotiableDetails ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className="space-y-6 pt-4">
+              {/* Price */}
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">Price *</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 font-medium text-sm">₦</div>
+                  <input
+                    type="text"
+                    value={price ? Number(price).toLocaleString() : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      setPrice(value);
+                    }}
+                    placeholder="Enter price"
+                    className="w-full bg-white border border-gray-300 rounded-md pl-8 pr-3 py-2 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* You will receive */}
+              <div>
+                <label className="block text-gray-700 text-sm mb-2">You will receive</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 font-medium text-sm">₦</div>
+                  <input
+                    type="text"
+                    value={price ? calculateYouReceive(Number(price)) : '0'}
+                    readOnly
+                    className="w-full bg-gray-50 border border-gray-300 rounded-md pl-8 pr-3 py-2 text-gray-900 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Commission & VAT */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-700 text-sm mb-2">Commission 10%</label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 font-medium text-sm">₦</div>
+                    <input
+                      type="text"
+                      value={price ? calculateCommission(Number(price)) : '0'}
+                      readOnly
+                      className="w-full bg-gray-50 border border-gray-300 rounded-md pl-8 pr-3 py-2 text-gray-900 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm mb-2">VAT</label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 font-medium text-sm">₦</div>
+                    <input
+                      type="text"
+                      value="0"
+                      readOnly
+                      className="w-full bg-gray-50 border border-gray-300 rounded-md pl-8 pr-3 py-2 text-gray-900 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bulk Pricing Section */}
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <div className="text-sm text-gray-700 mb-3">From 2 pieces</div>
+                {bulkPrices.map((bulk, index) => (
+                  <div key={index} className="flex items-center justify-between mb-3 bg-gray-50 rounded-md p-3">
+                    {editingBulkIndex === index ? (
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={editBulkQuantity}
+                            onChange={(e) => setEditBulkQuantity(e.target.value)}
+                            className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-900"
+                            placeholder="Qty"
+                          />
+                          <input
+                            type="number"
+                            value={editBulkPrice}
+                            onChange={(e) => setEditBulkPrice(e.target.value)}
+                            className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-900"
+                            placeholder="Price"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={saveEditingBulk}
+                            className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditingBulk}
+                            className="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-medium hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-gray-700">From {bulk.minQuantity} pieces</span>
+                          <span className="text-sm font-semibold text-gray-900">₦{bulk.price.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => startEditingBulk(index)}
+                            className="text-[#3652AD] text-xs font-medium hover:text-blue-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeBulkPrice(index)}
+                            className="text-[#E52B50] text-xs font-medium hover:text-red-600"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+                
+                <button
+                  type="button"
+                  onClick={addBulkPrice}
+                  className="flex items-center gap-2 text-[#3652AD] text-sm font-medium hover:text-blue-700 mt-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add bulk price
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Warranty Section */}
-        <div className='p-4 w-[90%] mx-auto bg-white rounded-2xl border border-gray-200'>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Warranty Information</h2>
+        <div className='p-4 w-[100%] mx-auto bg-white rounded-2xl border border-gray-200'>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Warranty Information (Optional)</h2>
           <label className="block text-gray-900 text-sm font-medium mb-2">
-            Warranty <span className="text-gray-500 font-normal">(Optional)</span>
+            Warranty
           </label>
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <input
@@ -755,16 +957,14 @@ export default function PostItemPage() {
         </div>
 
         {/* Shipping Section */}
-        <div className="p-4 w-[90%] mx-auto bg-white rounded-2xl border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shipping Information</h2>
-          
+        <div className="p-4 w-[100%] mx-auto bg-white rounded-2xl border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <span className="text-gray-900 font-medium">Shipped from abroad</span>
             <button
               type="button"
               onClick={toggleShippedFromAbroad}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                shippedFromAbroad ? 'bg-blue-600' : 'bg-gray-300'
+                shippedFromAbroad ? 'bg-[#0973A8]' : 'bg-gray-300'
               }`}
             >
               <div
@@ -882,7 +1082,7 @@ export default function PostItemPage() {
                       onClick={() => setShowDaysDropdown(!showDaysDropdown)}
                       className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <span className={numberOfDays ? 'text-gray-900' : 'text-gray-400'}>
+                      <span className={numberOfDays ? 'text-gray-900' : 'text-gray-400 text-[13px]'}>
                         {numberOfDays || 'Number of days'}
                       </span>
                       <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -909,9 +1109,9 @@ export default function PostItemPage() {
 
                 <button
                   type="button"
-                  className="flex items-center gap-2 text-blue-600 font-medium text-sm mt-3 hover:text-[#3652AD]"
+                  className="flex items-center gap-2 text-[#3652AD] font-medium text-sm mt-3 hover:text-[#3652AD]"
                 >
-                  <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-[#3652AD] flex items-center justify-center">
                     <Plus className="w-3 h-3 text-white" />
                   </div>
                   Add another location
@@ -1045,13 +1245,13 @@ export default function PostItemPage() {
         </div>
 
         {/* Submit Button */}
-        <div className="p-4 w-[90%] mx-auto">
+        <div className="p-4 w-[100%] mx-auto">
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || !isAuthenticated}
             className={`w-full font-semibold py-3 rounded-[100px] transition-colors ${
-              loading 
+              loading || !isAuthenticated
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                 : 'bg-[#3652AD] text-white hover:bg-[#3652AD]'
             }`}

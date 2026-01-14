@@ -12,11 +12,10 @@ export const useCheckAuth = () => {
     setLoading,
     isLoading,
     isAuthenticated,
-    hasHydrated,   // ✅ added from store
+    hasHydrated,
   } = useAuthStore();
-
+-
   useEffect(() => {
-    // 🚫 Don’t run any check until store has finished hydrating
     if (!hasHydrated) {
       console.log('⏳ Waiting for store hydration...');
       return;
@@ -30,7 +29,6 @@ export const useCheckAuth = () => {
         user ? 'exists' : 'missing'
       );
 
-      // 1️⃣ No token means not authenticated (only after hydration)
       if (!token) {
         console.log('❌ No token - not authenticated');
         logout();
@@ -38,14 +36,12 @@ export const useCheckAuth = () => {
         return;
       }
 
-      // 2️⃣ Token and user already exist — skip revalidation
       if (token && user && isAuthenticated) {
         console.log('✅ Already authenticated with user data');
         setLoading(false);
         return;
       }
 
-      // 3️⃣ Token exists but user missing — fetch from API
       if (token && !user) {
         try {
           console.log('🔄 Token exists but no user data - fetching...');
@@ -69,5 +65,12 @@ export const useCheckAuth = () => {
     checkAuthStatus();
   }, [hasHydrated, token, user, isAuthenticated, login, logout, setLoading]);
 
-  return { isLoading, user };
+  // Return the complete auth state
+  return { 
+    isLoading, 
+    user,
+    token,
+    isAuthenticated,
+    hasHydrated 
+  };
 };

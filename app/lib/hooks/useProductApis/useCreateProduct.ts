@@ -1,29 +1,46 @@
 import { useState } from 'react';
 import { productApi, Product } from '../../api/productsApi';
 
-// Define CreateProductData locally
 interface CreateProductData {
   name: string;
   price: number;
   description?: string;
   category?: string;
-  images?: string[];
-  vendor?: string;
-  type?: string;
-  color?: string;
   condition?: string;
   gender?: string;
   sizes?: string[];
   bulkPrices?: {
-    quantity: number;
+    minQuantity: number;
     price: number;
   }[];
   colours?: string[];
-  // Add other product fields as needed
+  location?: {
+    city: string;
+    state: string;
+  };
+  isShippedFromAbroad?: boolean;
+  shippingAddress?: {
+    country: string;
+    city: string;
+    state: string;
+  };
+  shippingOptions?: string[];
+  deliveryTimelines?: {
+    location: string;
+    scope: string;
+    deliveryType: string;
+    numberOfDays: string;
+  }[];
+  videoLink?: string;
+  isNegotiable?: boolean;
+  warranty?: {
+    value: string;
+    period: string;
+  };
 }
 
 interface UseCreateProductReturn {
-  createProduct: (productData: CreateProductData) => Promise<void>;
+  createProduct: (productData: CreateProductData, files: File[]) => Promise<void>;
   loading: boolean;
   error: string | null;
   success: boolean;
@@ -36,23 +53,28 @@ export const useCreateProduct = (): UseCreateProductReturn => {
   const [success, setSuccess] = useState<boolean>(false);
   const [product, setProduct] = useState<Product | null>(null);
 
-  const createProduct = async (productData: CreateProductData) => {
+  const createProduct = async (productData: CreateProductData, files: File[]) => {
     try {
       setLoading(true);
       setError(null);
       setSuccess(false);
       
       console.log('Creating product with data:', productData);
+      console.log('Files to upload:', files);
       
-      const response = await productApi.createProduct(productData);
+      const response = await productApi.createProduct(productData, files);
       
       console.log('Product creation response:', response);
       
-      setProduct(response.product);
-      setSuccess(true);
+      if (response.product) {
+        setProduct(response.product);
+        setSuccess(true);
+      } else {
+        throw new Error(response.message || 'Failed to create product');
+      }
       
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create product';
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create product';
       setError(errorMessage);
       console.error('Error creating product:', err);
       setSuccess(false);
