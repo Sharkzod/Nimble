@@ -51,9 +51,9 @@ export const useChats = (): UseChatsReturn => {
         return;
       }
 
-      // const backendUrl = 'https://nimble-backend-qfg0.onrender.com';
+      const backendUrl = 'https://nimble-backend-qfg0.onrender.com';
 
-            const backendUrl = 'http://localhost:4000';
+            // const backendUrl = 'http://localhost:4000';
 
       
       const response = await fetch(`${backendUrl}/api/chats`, {
